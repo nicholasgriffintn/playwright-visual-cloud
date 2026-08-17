@@ -23,10 +23,7 @@ export function PlanGate({ user, onLogout }: PlanGateProps) {
             <span>Account</span> {user.plan} plan
           </p>
           <h1>Pro access required.</h1>
-          <p>
-            Billing is not connected yet. This account needs to be assigned the Pro plan before it
-            can use Visual Cloud.
-          </p>
+          <p>Your account does not currently have access to Visual Cloud.</p>
           <a className="button button-primary" href="/">
             Back to site
           </a>
