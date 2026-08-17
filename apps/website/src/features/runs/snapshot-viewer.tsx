@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { diffMetric } from "../../lib/format";
 import type { Snapshot } from "../../lib/types";
+import {
+  isReviewableSnapshot,
+  snapshotStatusLabel,
+  type SnapshotReviewAction,
+} from "./snapshot-status";
 
 type ViewMode = "split" | "slider" | "diff";
 
@@ -16,7 +21,7 @@ export function SnapshotViewer({
 }) {
   const [mode, setMode] = useState<ViewMode>(snapshot.diff_key ? "slider" : "split");
   const [slider, setSlider] = useState(50);
-  const [approving, setApproving] = useState(false);
+  const [action, setAction] = useState<SnapshotReviewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,19 +32,30 @@ export function SnapshotViewer({
   const expected = snapshot.expected_key ? api.imageUrl(buildId, snapshot.expected_key) : null;
   const actual = api.imageUrl(buildId, snapshot.actual_key);
   const diff = snapshot.diff_key ? api.imageUrl(buildId, snapshot.diff_key) : null;
-  const reviewable = snapshot.status === "failed" || snapshot.status === "new";
+  const reviewable = isReviewableSnapshot(snapshot);
 
-  async function approve() {
-    setApproving(true);
+  async function review(review: SnapshotReviewAction) {
+    setAction(review);
     try {
-      await api.approveSnapshot(buildId, snapshot.id);
+      if (review === "approve") {
+        await api.approveSnapshot(buildId, snapshot.id);
+      } else if (review === "ignore") {
+        await api.ignoreSnapshot(buildId, snapshot.id);
+      } else if (review === "archive") {
+        await api.archiveSnapshot(buildId, snapshot.id);
+      } else {
+        throw new Error("Unknown review type provided.");
+      }
+
       onApproved();
     } catch (cause) {
       setError((cause as Error).message);
     } finally {
-      setApproving(false);
+      setAction(null);
     }
   }
+
+  const status = snapshotStatusLabel(snapshot);
 
   return (
     <section className="snapshot-viewer">
@@ -70,20 +86,38 @@ export function SnapshotViewer({
             />
           </div>
           {reviewable ? (
-            <button
-              className="button button-primary"
-              disabled={approving}
-              onClick={() => void approve()}
-              type="button"
-            >
-              {approving
-                ? "Approving…"
-                : snapshot.status === "new"
-                  ? "Accept baseline"
-                  : "Approve change"}
-            </button>
+            <>
+              <button
+                className="button button-primary"
+                disabled={Boolean(action)}
+                onClick={() => void review("approve")}
+                type="button"
+              >
+                {action === "approve"
+                  ? "Approving…"
+                  : snapshot.status === "new"
+                    ? "Accept baseline"
+                    : "Approve change"}
+              </button>
+              <button
+                className="button"
+                disabled={Boolean(action)}
+                onClick={() => void review("ignore")}
+                type="button"
+              >
+                {action === "ignore" ? "Ignoring…" : "Ignore change"}
+              </button>
+              <button
+                className="button"
+                disabled={Boolean(action)}
+                onClick={() => void review("archive")}
+                type="button"
+              >
+                {action === "archive" ? "Archiving…" : "Archive change"}
+              </button>
+            </>
           ) : (
-            <span className="status-chip approved">{snapshot.status}</span>
+            <span className={`status-chip ${snapshot.status}`}>{status}</span>
           )}
         </div>
       </header>
@@ -104,7 +138,7 @@ export function SnapshotViewer({
         ) : (
           <span>Rendered artifact · private</span>
         )}
-        <span>{snapshot.status}</span>
+        <span>{status}</span>
       </footer>
     </section>
   );

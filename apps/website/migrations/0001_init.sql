@@ -112,7 +112,7 @@ CREATE TABLE snapshots (
   build_id TEXT NOT NULL REFERENCES builds(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   variant TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('passed', 'failed', 'new', 'approved')),
+  status TEXT NOT NULL CHECK (status IN ('passed', 'failed', 'new', 'approved', 'ignored', 'archived')),
   diff_pixels INTEGER,
   diff_ratio REAL,
   expected_key TEXT,

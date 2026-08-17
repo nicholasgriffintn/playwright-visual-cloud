@@ -134,7 +134,11 @@ async function main() {
     const { build, snapshots } = await client.getBuild(buildId);
     const failed = snapshots.filter((s) => s.status === "failed");
     const fresh = snapshots.filter((s) => s.status === "new");
-    const ok = snapshots.filter((s) => s.status === "passed" || s.status === "approved");
+    const ignored = snapshots.filter((s) => s.status === "ignored").length;
+    const archived = snapshots.filter((s) => s.status === "archived").length;
+    const ok = snapshots.filter(
+      (s) => s.status === "passed" || s.status === "approved",
+    );
 
     if (flags.json) {
       console.log(
@@ -144,6 +148,8 @@ async function main() {
             matched: ok.length,
             changed: failed.length,
             new: fresh.length,
+            ignored,
+            archived,
             review_status: build.review_status,
           },
           changes: snapshots.map((s) => ({
@@ -163,6 +169,8 @@ async function main() {
       console.log(`  matched:  ${ok.length}`);
       console.log(`  changed:  ${failed.length}`);
       console.log(`  new:      ${fresh.length}`);
+      if (ignored) console.log(`  ignored:  ${ignored}`);
+      if (archived) console.log(`  archived: ${archived}`);
       for (const s of [...failed, ...fresh]) {
         console.log(`    ${s.status.padEnd(7)} ${s.name} [${s.variant}]`);
       }

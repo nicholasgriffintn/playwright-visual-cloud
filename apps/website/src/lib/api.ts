@@ -90,9 +90,21 @@ export const api = {
     request<BuildPayload>(`/api/review/builds/${encodeURIComponent(buildId)}`),
   approveBuild: (buildId: string) =>
     post<{ approved: number }>(`/api/review/builds/${encodeURIComponent(buildId)}/approve`),
+  ignoreBuild: (buildId: string) =>
+    post<{ ignored: number }>(`/api/review/builds/${encodeURIComponent(buildId)}/ignore`),
+  archiveBuild: (buildId: string) =>
+    post<{ archived: number }>(`/api/review/builds/${encodeURIComponent(buildId)}/archive`),
   approveSnapshot: (buildId: string, snapshotId: string) =>
     post(
       `/api/review/builds/${encodeURIComponent(buildId)}/snapshots/${encodeURIComponent(snapshotId)}/approve`,
+    ),
+  ignoreSnapshot: (buildId: string, snapshotId: string) =>
+    post(
+      `/api/review/builds/${encodeURIComponent(buildId)}/snapshots/${encodeURIComponent(snapshotId)}/ignore`,
+    ),
+  archiveSnapshot: (buildId: string, snapshotId: string) =>
+    post(
+      `/api/review/builds/${encodeURIComponent(buildId)}/snapshots/${encodeURIComponent(snapshotId)}/archive`,
     ),
   imageUrl: (buildId: string, key: string) =>
     `/api/review/builds/${encodeURIComponent(buildId)}/images/${encodeURIComponent(key)}`,

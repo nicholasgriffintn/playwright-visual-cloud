@@ -58,7 +58,7 @@ export interface Snapshot {
   build_id: string;
   name: string;
   variant: string;
-  status: "passed" | "failed" | "new" | "approved";
+  status: "passed" | "failed" | "new" | "approved" | "ignored" | "archived";
   diff_pixels: number | null;
   diff_ratio: number | null;
   expected_key: string | null;

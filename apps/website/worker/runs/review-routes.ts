@@ -14,6 +14,10 @@ reviewRoutes.use("*", protectBrowserMutations);
 reviewRoutes.get("/builds/:buildId", getBuild);
 reviewRoutes.post("/builds/:buildId/approve", approveBuild);
 reviewRoutes.post("/builds/:buildId/snapshots/:snapshotId/approve", approveSnapshot);
+reviewRoutes.post("/builds/:buildId/ignore", ignoreBuild);
+reviewRoutes.post("/builds/:buildId/archive", archiveBuild);
+reviewRoutes.post("/builds/:buildId/snapshots/:snapshotId/ignore", ignoreSnapshot);
+reviewRoutes.post("/builds/:buildId/snapshots/:snapshotId/archive", archiveSnapshot);
 reviewRoutes.get("/builds/:buildId/images/:key", getImage);
 
 async function getBuild(context: AppContext): Promise<Response> {
@@ -28,10 +32,45 @@ async function approveBuild(context: AppContext): Promise<Response> {
 
   return context.json({ approved });
 }
+async function ignoreBuild(context: AppContext): Promise<Response> {
+  const { user } = await requireProSession(context);
+  const ignored = await runs(context).ignoreBuild(user.id, routeParam(context, "buildId"));
+
+  return context.json({ ignored });
+}
+
+async function archiveBuild(context: AppContext): Promise<Response> {
+  const { user } = await requireProSession(context);
+  const archived = await runs(context).archiveBuild(user.id, routeParam(context, "buildId"));
+
+  return context.json({ archived });
+}
 
 async function approveSnapshot(context: AppContext): Promise<Response> {
   const { user } = await requireProSession(context);
   const snapshot = await runs(context).approveSnapshot(
+    user.id,
+    routeParam(context, "buildId"),
+    routeParam(context, "snapshotId"),
+  );
+
+  return context.json(snapshot);
+}
+
+async function ignoreSnapshot(context: AppContext): Promise<Response> {
+  const { user } = await requireProSession(context);
+  const snapshot = await runs(context).ignoreSnapshot(
+    user.id,
+    routeParam(context, "buildId"),
+    routeParam(context, "snapshotId"),
+  );
+
+  return context.json(snapshot);
+}
+
+async function archiveSnapshot(context: AppContext): Promise<Response> {
+  const { user } = await requireProSession(context);
+  const snapshot = await runs(context).archiveSnapshot(
     user.id,
     routeParam(context, "buildId"),
     routeParam(context, "snapshotId"),

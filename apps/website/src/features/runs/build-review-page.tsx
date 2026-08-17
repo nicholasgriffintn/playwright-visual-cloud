@@ -6,10 +6,12 @@ import { shortCommit } from "../../lib/format";
 import { routeHref } from "../../lib/router";
 import type { BuildPayload } from "../../lib/types";
 import { SnapshotViewer } from "./snapshot-viewer";
+import { isPendingSnapshot } from "./snapshot-status";
 
 export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snapshotId?: string }) {
   const [payload, setPayload] = useState<BuildPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [action, setAction] = useState<"approve" | "ignore" | "archive" | null>(null);
   const load = useCallback(async () => {
     try {
       setPayload(await api.build(buildId));
@@ -33,9 +35,29 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
 
   const selected =
     payload.snapshots.find((snapshot) => snapshot.id === snapshotId) ?? payload.snapshots[0];
-  const pending = payload.snapshots.filter(
-    (snapshot) => snapshot.status === "failed" || snapshot.status === "new",
-  );
+  const pending = payload.snapshots.filter(isPendingSnapshot);
+
+  async function apply(actionType: "approve" | "ignore" | "archive") {
+    setAction(actionType);
+    try {
+      if (actionType === "approve") {
+        await api.approveBuild(buildId);
+      } else if (actionType === "ignore") {
+        await api.ignoreBuild(buildId);
+      } else if (actionType === "archive") {
+        await api.archiveBuild(buildId);
+      } else {
+        throw new Error("Unknown action type provided.");
+      }
+
+      await load();
+      setError(null);
+    } catch (cause: unknown) {
+      setError(errorMessage(cause));
+    } finally {
+      setAction(null);
+    }
+  }
 
   return (
     <section className="review-page">
@@ -55,18 +77,32 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
             <small>{payload.snapshots.length} snapshots</small>
           </div>
           {pending.length ? (
-            <button
-              className="button button-primary button-wide"
-              onClick={() =>
-                void api
-                  .approveBuild(buildId)
-                  .then(load)
-                  .catch((cause: unknown) => setError(errorMessage(cause)))
-              }
-              type="button"
-            >
-              Approve all · {pending.length}
-            </button>
+            <div className="review-actions">
+              <button
+                className="button button-primary"
+                disabled={Boolean(action)}
+                onClick={() => void apply("approve")}
+                type="button"
+              >
+                {action === "approve" ? "Approving…" : `Approve all · ${pending.length}`}
+              </button>
+              <button
+                className="button"
+                disabled={Boolean(action)}
+                onClick={() => void apply("ignore")}
+                type="button"
+              >
+                {action === "ignore" ? "Ignoring…" : `Ignore all · ${pending.length}`}
+              </button>
+              <button
+                className="button"
+                disabled={Boolean(action)}
+                onClick={() => void apply("archive")}
+                type="button"
+              >
+                {action === "archive" ? "Archiving…" : `Archive all · ${pending.length}`}
+              </button>
+            </div>
           ) : null}
         </div>
         <nav className="snapshot-list" aria-label="Snapshots">

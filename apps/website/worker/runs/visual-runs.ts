@@ -54,19 +54,31 @@ export interface VisualRuns {
     query: BaselineQuery,
   ): Promise<{ imageKey: string; width: number; height: number; branch: string } | null>;
   approveSnapshot(userId: string, buildId: string, snapshotId: string): Promise<Snapshot>;
+  ignoreSnapshot(userId: string, buildId: string, snapshotId: string): Promise<Snapshot>;
+  archiveSnapshot(userId: string, buildId: string, snapshotId: string): Promise<Snapshot>;
   approveBuild(userId: string, buildId: string): Promise<number>;
+  ignoreBuild(userId: string, buildId: string): Promise<number>;
+  archiveBuild(userId: string, buildId: string): Promise<number>;
 }
 
+type ReviewStatus = "approved" | "ignored" | "archived";
+
 export function createVisualRuns(db: D1Database): VisualRuns {
+  const snapshotSelect = `
+    SELECT id, build_id, name, variant, status, diff_pixels, diff_ratio, expected_key, actual_key, diff_key, width, height, approved_at
+    FROM snapshots`;
+
+  function isPendingSnapshot(snapshot: Snapshot): boolean {
+    return snapshot.status === "failed" || snapshot.status === "new";
+  }
+
   async function getBuild(buildId: string): Promise<Build | null> {
     return db.prepare("SELECT * FROM builds WHERE id = ?1").bind(buildId).first<Build>();
   }
 
   async function payload(build: Build): Promise<BuildPayload> {
     const snapshots = await db
-      .prepare(
-        "SELECT * FROM snapshots WHERE build_id = ?1 ORDER BY status IN ('failed','new') DESC, name",
-      )
+      .prepare(`${snapshotSelect} WHERE build_id = ?1 ORDER BY status IN ('failed','new') DESC, name`)
       .bind(build.id)
       .all<Snapshot>();
 
@@ -138,18 +150,84 @@ export function createVisualRuns(db: D1Database): VisualRuns {
   async function refreshReviewStatus(buildId: string): Promise<void> {
     const counts = await db
       .prepare(
-        `SELECT SUM(status IN ('failed','new')) AS pending, SUM(status = 'approved') AS approved
-       FROM snapshots WHERE build_id = ?1`,
+        `SELECT
+          SUM(CASE WHEN status IN ('failed', 'new') THEN 1 ELSE 0 END) AS pending,
+          SUM(CASE WHEN status IN ('approved', 'ignored', 'archived') THEN 1 ELSE 0 END) AS reviewed
+         FROM snapshots
+         WHERE build_id = ?1`,
       )
       .bind(buildId)
-      .first<{ pending: number | null; approved: number | null }>();
+      .first<{ pending: number | null; reviewed: number | null }>();
     const status =
-      (counts?.pending ?? 0) > 0 ? "pending" : (counts?.approved ?? 0) > 0 ? "approved" : "none";
+      (counts?.pending ?? 0) > 0 ? "pending" : (counts?.reviewed ?? 0) > 0 ? "approved" : "none";
 
     await db
       .prepare("UPDATE builds SET review_status = ?1 WHERE id = ?2")
       .bind(status, buildId)
       .run();
+  }
+
+
+  async function setSnapshotReviewStatus(
+    build: Build,
+    snapshotId: string,
+    reviewStatus: ReviewStatus,
+  ): Promise<Snapshot> {
+    const snapshot = await db
+      .prepare(
+        `${snapshotSelect} WHERE id = ?1 AND build_id = ?2`,
+      )
+      .bind(snapshotId, build.id)
+      .first<Snapshot>();
+
+    if (!snapshot) {
+      throw new DomainError("Snapshot not found", 404);
+    }
+
+    if (isPendingSnapshot(snapshot) && reviewStatus === "approved") {
+      await promote(build, snapshot);
+    }
+
+    await db
+      .prepare(
+        "UPDATE snapshots SET status = ?1, approved_at = CASE WHEN ?1 = 'approved' THEN datetime('now') ELSE NULL END WHERE id = ?2",
+      )
+      .bind(reviewStatus, snapshotId)
+      .run();
+
+    await refreshReviewStatus(build.id);
+
+    return (await db
+      .prepare(`${snapshotSelect} WHERE id = ?1`)
+      .bind(snapshotId)
+      .first<Snapshot>())!;
+  }
+
+  async function setBuildReviewStatus(build: Build, reviewStatus: ReviewStatus): Promise<number> {
+    const current = await payload(build);
+    const pending = current.snapshots.filter(isPendingSnapshot);
+
+    if (!pending.length) {
+      return 0;
+    }
+
+    if (reviewStatus === "approved") {
+      for (const snapshot of pending) {
+        await promote(build, snapshot);
+      }
+    }
+
+    await db
+      .prepare(
+        "UPDATE snapshots SET status = ?1, approved_at = CASE WHEN ?1 = 'approved' THEN datetime('now') ELSE NULL END WHERE build_id = ?2 AND status IN ('failed','new')",
+      )
+      .bind(reviewStatus)
+      .bind(build.id)
+      .run();
+
+    await refreshReviewStatus(build.id);
+
+    return pending.length;
   }
 
   return {
@@ -233,14 +311,14 @@ export function createVisualRuns(db: D1Database): VisualRuns {
     async recordSnapshot(projectId, buildId, input) {
       const build = await requireProjectBuild(projectId, buildId);
       const autoApproved = input.status === "new" && input.autoBaseline;
-      const snapshot = (await db
+      await db
         .prepare(
           `INSERT INTO snapshots (id, build_id, name, variant, status, diff_pixels, diff_ratio, expected_key, actual_key, diff_key, width, height, approved_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
          ON CONFLICT (build_id, name, variant) DO UPDATE SET status = excluded.status, diff_pixels = excluded.diff_pixels,
            diff_ratio = excluded.diff_ratio, expected_key = excluded.expected_key, actual_key = excluded.actual_key,
            diff_key = excluded.diff_key, width = excluded.width, height = excluded.height, approved_at = excluded.approved_at
-         RETURNING *`,
+         `,
         )
         .bind(
           crypto.randomUUID(),
@@ -257,13 +335,27 @@ export function createVisualRuns(db: D1Database): VisualRuns {
           input.height,
           autoApproved ? new Date().toISOString() : null,
         )
-        .first<Snapshot>())!;
+        .run();
 
       if (autoApproved) {
-        await promote(build, snapshot);
+        const snapshot = await db
+          .prepare(
+            `${snapshotSelect} WHERE build_id = ?1 AND name = ?2 AND variant = ?3`,
+          )
+          .bind(buildId, input.name, input.variant)
+          .first<Snapshot>();
+
+        if (snapshot) {
+          await promote(build, snapshot);
+        }
       }
 
       await refreshReviewStatus(buildId);
+
+      const snapshot = (await db
+        .prepare(`${snapshotSelect} WHERE build_id = ?1 AND name = ?2 AND variant = ?3`)
+        .bind(buildId, input.name, input.variant)
+        .first<Snapshot>())!;
 
       return snapshot;
     },
@@ -288,50 +380,38 @@ export function createVisualRuns(db: D1Database): VisualRuns {
 
     async approveSnapshot(userId, buildId, snapshotId) {
       const build = await requireUserBuild(userId, buildId);
-      const snapshot = await db
-        .prepare("SELECT * FROM snapshots WHERE id = ?1 AND build_id = ?2")
-        .bind(snapshotId, buildId)
-        .first<Snapshot>();
 
-      if (!snapshot) {
-        throw new DomainError("Snapshot not found", 404);
-      }
+      return setSnapshotReviewStatus(build, snapshotId, "approved");
+    },
 
-      await promote(build, snapshot);
-      await db
-        .prepare(
-          "UPDATE snapshots SET status = 'approved', approved_at = datetime('now') WHERE id = ?1",
-        )
-        .bind(snapshotId)
-        .run();
-      await refreshReviewStatus(buildId);
+    async ignoreSnapshot(userId, buildId, snapshotId) {
+      const build = await requireUserBuild(userId, buildId);
 
-      return (await db
-        .prepare("SELECT * FROM snapshots WHERE id = ?1")
-        .bind(snapshotId)
-        .first<Snapshot>())!;
+      return setSnapshotReviewStatus(build, snapshotId, "ignored");
+    },
+
+    async archiveSnapshot(userId, buildId, snapshotId) {
+      const build = await requireUserBuild(userId, buildId);
+
+      return setSnapshotReviewStatus(build, snapshotId, "archived");
     },
 
     async approveBuild(userId, buildId) {
       const build = await requireUserBuild(userId, buildId);
-      const current = await payload(build);
-      const pending = current.snapshots.filter(
-        (snapshot) => snapshot.status === "failed" || snapshot.status === "new",
-      );
 
-      for (const snapshot of pending) {
-        await promote(build, snapshot);
-      }
+      return setBuildReviewStatus(build, "approved");
+    },
 
-      await db
-        .prepare(
-          "UPDATE snapshots SET status = 'approved', approved_at = datetime('now') WHERE build_id = ?1 AND status IN ('failed','new')",
-        )
-        .bind(buildId)
-        .run();
-      await refreshReviewStatus(buildId);
+    async ignoreBuild(userId, buildId) {
+      const build = await requireUserBuild(userId, buildId);
 
-      return pending.length;
+      return setBuildReviewStatus(build, "ignored");
+    },
+
+    async archiveBuild(userId, buildId) {
+      const build = await requireUserBuild(userId, buildId);
+
+      return setBuildReviewStatus(build, "archived");
     },
   };
 }

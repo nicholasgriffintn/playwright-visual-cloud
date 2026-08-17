@@ -356,8 +356,12 @@ h2 em {
 }
 .status-chip.approved,
 .status-chip.clean,
-.status-chip.passed {
+.status-chip.passed,
+.status-chip.archived {
   color: #39713b;
+}
+.status-chip.ignored {
+  color: #7a3fc4;
 }
 .status-chip.running,
 .status-chip.new {
@@ -1303,6 +1307,25 @@ h2 em {
 .snapshot-dot.passed {
   background: #4ca651;
 }
+.snapshot-dot.archived {
+  background: var(--muted);
+}
+.snapshot-dot.ignored {
+  background: #9b71ec;
+}
+
+.review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.viewer-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
 .snapshot-viewer {
   min-width: 0;
 }
@@ -1323,11 +1346,6 @@ h2 em {
   color: var(--muted);
   font: 10px var(--mono);
   margin: 5px 0 0;
-}
-.viewer-actions {
-  align-items: center;
-  display: flex;
-  gap: 12px;
 }
 .view-modes {
   border: 1px solid var(--line);
