@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Visual Cloud</title>
+  <path d="M60 168V60h108M344 60h108v108M452 344v108H344M168 452H60V344" fill="none" stroke="#11130f" stroke-linecap="square" stroke-width="28" />
+  <rect x="132" y="132" width="168" height="168" rx="24" fill="#c9f35d" stroke="#11130f" stroke-width="22" />
+  <rect x="212" y="212" width="168" height="168" rx="24" fill="#3157e8" fill-opacity=".86" stroke="#11130f" stroke-width="22" />
+  <path d="m168 344 176-176" fill="none" stroke="#11130f" stroke-linecap="square" stroke-width="28" />
+</svg>

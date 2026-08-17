@@ -1,0 +1,51 @@
+{
+  "name": "playwright-visual-cloud",
+  "version": "0.1.0",
+  "description": "Cloud visual snapshot testing for Playwright, backed by Cloudflare R2 + D1. Self-hosted, open-source alternative to Chromatic.",
+  "keywords": [
+    "chromatic",
+    "cloudflare",
+    "playwright",
+    "r2",
+    "screenshot",
+    "snapshot",
+    "visual-regression"
+  ],
+  "license": "MIT",
+  "bin": {
+    "pvc": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./reporter": {
+      "types": "./dist/reporter.d.ts",
+      "default": "./dist/reporter.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "pnpm run build",
+    "check": "pnpm build"
+  },
+  "dependencies": {
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.62.1"
+  }
+}

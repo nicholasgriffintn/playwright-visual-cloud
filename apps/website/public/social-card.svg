@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Visual Cloud</title>
+  <desc id="description">Open-source visual testing for Playwright</desc>
+  <rect width="1200" height="630" fill="#f3f0e7" />
+  <path d="M0 518h1200" stroke="#11130f" stroke-width="3" />
+  <path d="M926 0v630" stroke="#c9c5b9" stroke-width="2" />
+  <rect x="926" width="274" height="518" fill="#c9f35d" />
+  <g transform="translate(986 153) scale(.42)">
+    <path d="M60 168V60h108M344 60h108v108M452 344v108H344M168 452H60V344" fill="none" stroke="#11130f" stroke-linecap="square" stroke-width="28" />
+    <rect x="132" y="132" width="168" height="168" rx="24" fill="#f3f0e7" stroke="#11130f" stroke-width="22" />
+    <rect x="212" y="212" width="168" height="168" rx="24" fill="#3157e8" fill-opacity=".86" stroke="#11130f" stroke-width="22" />
+    <path d="m168 344 176-176" fill="none" stroke="#11130f" stroke-linecap="square" stroke-width="28" />
+  </g>
+  <text x="84" y="112" fill="#3157e8" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="4">VISUAL TESTING FOR PLAYWRIGHT</text>
+  <text x="78" y="282" fill="#11130f" font-family="Georgia, serif" font-size="112" font-weight="700">Visual Cloud</text>
+  <text x="84" y="372" fill="#11130f" font-family="Arial, sans-serif" font-size="39">Catch the pixels you didn't mean to ship.</text>
+  <text x="84" y="574" fill="#11130f" font-family="Arial, sans-serif" font-size="25" font-weight="700">OPEN SOURCE · SELF-HOSTED · REVIEW-GATED</text>
+</svg>

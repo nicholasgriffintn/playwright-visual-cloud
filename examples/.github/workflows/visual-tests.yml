@@ -1,0 +1,29 @@
+name: Visual tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    env:
+      PVC_SERVER_URL: ${{ vars.PVC_SERVER_URL }}
+      PVC_TOKEN: ${{ secrets.PVC_TOKEN }}
+      # Chromatic-style flow: don't fail tests on diffs; gate on review instead.
+      PVC_FAIL_ON_DIFF: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Run Playwright (snapshots upload to Visual Cloud)
+        run: pnpm exec playwright test
+      - name: Gate on visual review
+        # Exits 1 while changed/new snapshots are unapproved.
+        # Approve in the review UI and re-run this job.
+        run: pnpm exec pvc status
