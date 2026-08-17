@@ -31,8 +31,8 @@ export function WorkspacePage({ workspace }: { workspace: Workspace }) {
           <p className="eyebrow">
             <span>Projects</span> {projects.length} connected
           </p>
-          <h1>What are we watching?</h1>
-          <p>Each project gets isolated baselines, builds, and CI credentials.</p>
+          <h1>What should we work on next??</h1>
+          <p>Select a project or configure a new one to monitor.</p>
         </div>
         {workspace.role === "owner" ? (
           <button className="button button-primary" onClick={() => setCreating(true)} type="button">

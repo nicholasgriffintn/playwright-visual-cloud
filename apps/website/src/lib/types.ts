@@ -1,8 +1,11 @@
+export type Plan = "free" | "pro";
+
 export interface User {
   id: string;
   email: string;
   name: string;
   avatar_url: string | null;
+  plan: Plan;
 }
 
 export interface Workspace {

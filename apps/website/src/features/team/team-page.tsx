@@ -45,7 +45,7 @@ export function TeamPage({ workspace }: { workspace: Workspace }) {
           <p className="eyebrow">
             <span>Team</span> workspace access
           </p>
-          <h1>Review is a team sport.</h1>
+          <h1>Reviewing is a team sport.</h1>
           <p>Invite the people who can decide whether a visual change belongs.</p>
         </div>
       </div>

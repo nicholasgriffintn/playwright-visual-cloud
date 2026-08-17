@@ -37,10 +37,21 @@ export async function requireSession(context: AppContext): Promise<SessionPrinci
       email: user.email,
       name: user.displayName,
       avatar_url: user.avatarUrl ?? null,
+      plan: user.plan,
       created_at: user.createdAt.toISOString(),
     },
     token,
   };
+}
+
+export async function requireProSession(context: AppContext): Promise<SessionPrincipal> {
+  const principal = await requireSession(context);
+
+  if (principal.user.plan !== "pro") {
+    throw new HTTPException(403, { message: "Pro plan required" });
+  }
+
+  return principal;
 }
 
 export async function requireProjectToken(context: AppContext): Promise<ProjectPrincipal> {

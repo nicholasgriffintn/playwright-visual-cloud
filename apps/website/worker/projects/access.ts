@@ -11,8 +11,13 @@ export function createProjectAccess(db: D1Database): ProjectAccess {
     async authenticate(rawToken) {
       const row = await db
         .prepare(
-          `SELECT p.*, t.id AS token_id FROM project_tokens t JOIN projects p ON p.id = t.project_id
-         WHERE t.token_hash = ?1 AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))`,
+          `SELECT p.*, t.id AS token_id
+           FROM project_tokens t
+           JOIN projects p ON p.id = t.project_id
+           JOIN users u ON u.id = t.created_by
+           WHERE t.token_hash = ?1
+             AND u.plan = 'pro'
+             AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))`,
         )
         .bind(await hashToken(rawToken))
         .first<Record<string, string | null>>();

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 
 import { createVisualRuns } from "../runs/visual-runs";
 import { protectBrowserMutations } from "../shared/browser-security";
-import { requireSession, type AppContext } from "../shared/http";
+import { requireProSession, type AppContext } from "../shared/http";
 import {
   inviteInput,
   inviteTokenInput,
@@ -33,13 +33,13 @@ projectRoutes.get("/:projectId/builds", listProjectBuilds);
 projectRoutes.post("/:projectId/tokens", createProjectToken);
 
 async function listWorkspaces(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
 
   return context.json({ workspaces: await directory(context).listWorkspaces(user.id) });
 }
 
 async function createWorkspace(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const input = await workspaceInput(context);
 
   return context.json(
@@ -49,7 +49,7 @@ async function createWorkspace(context: AppContext): Promise<Response> {
 }
 
 async function listProjects(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
 
   return context.json({
     projects: await directory(context).listProjects(user.id, routeParam(context, "workspaceId")),
@@ -57,7 +57,7 @@ async function listProjects(context: AppContext): Promise<Response> {
 }
 
 async function createProject(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const project = await directory(context).createProject(
     user.id,
     routeParam(context, "workspaceId"),
@@ -68,7 +68,7 @@ async function createProject(context: AppContext): Promise<Response> {
 }
 
 async function listMembers(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
 
   return context.json({
     members: await directory(context).listMembers(user.id, routeParam(context, "workspaceId")),
@@ -76,7 +76,7 @@ async function listMembers(context: AppContext): Promise<Response> {
 }
 
 async function createInvite(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const token = await directory(context).createInvite(
     user.id,
     routeParam(context, "workspaceId"),
@@ -88,14 +88,14 @@ async function createInvite(context: AppContext): Promise<Response> {
 }
 
 async function acceptInvite(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const workspaceId = await directory(context).acceptInvite(user, await inviteTokenInput(context));
 
   return context.json({ workspaceId });
 }
 
 async function getProject(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
 
   return context.json({
     project: await directory(context).getProject(user.id, routeParam(context, "projectId")),
@@ -103,7 +103,7 @@ async function getProject(context: AppContext): Promise<Response> {
 }
 
 async function listProjectBuilds(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const builds = await createVisualRuns(context.env.DB).listBuilds(
     user.id,
     routeParam(context, "projectId"),
@@ -114,7 +114,7 @@ async function listProjectBuilds(context: AppContext): Promise<Response> {
 }
 
 async function createProjectToken(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const token = await directory(context).createProjectToken(
     user.id,
     routeParam(context, "projectId"),

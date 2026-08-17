@@ -969,13 +969,15 @@ h2 em {
 
 /* Project and team */
 .setup-panel {
-  background: var(--ink);
-  color: white;
+  align-items: start;
   display: grid;
-  grid-template-columns: 1fr 300px;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   margin: 30px 0 70px;
 }
 .setup-copy {
+  background: var(--ink);
+  color: white;
   padding: 38px;
 }
 .setup-copy h2,
@@ -1031,9 +1033,11 @@ h2 em {
   padding: 8px 0 16px;
 }
 .setup-aside a {
+  border-top: 1px solid rgba(17, 19, 15, 0.35);
   font-size: 11px;
   font-weight: 700;
-  margin-top: auto;
+  margin-top: 28px;
+  padding-top: 18px;
 }
 .token-reveal {
   align-items: center;
@@ -1415,6 +1419,68 @@ h2 em {
   font-size: 40px;
   letter-spacing: -0.05em;
 }
+.plan-gate {
+  min-height: 100vh;
+  padding: 0 clamp(20px, 4vw, 68px) 70px;
+}
+.plan-gate-header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  height: 76px;
+  justify-content: space-between;
+}
+.plan-gate-header button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.plan-gate-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  margin-top: clamp(50px, 9vw, 130px);
+  max-width: 1100px;
+}
+.plan-gate-copy {
+  background: var(--ink);
+  color: var(--white);
+  padding: clamp(38px, 7vw, 90px);
+}
+.plan-gate-copy .eyebrow span {
+  color: var(--acid);
+}
+.plan-gate-copy h1 {
+  font-size: clamp(52px, 7vw, 88px);
+  font-weight: 500;
+  letter-spacing: -0.07em;
+  line-height: 0.9;
+  margin: 0;
+  max-width: 650px;
+}
+.plan-gate-copy > p:not(.eyebrow) {
+  color: #cbd1c7;
+  margin: 34px 0;
+  max-width: 560px;
+}
+.plan-gate-details {
+  background: var(--acid);
+  margin: 0;
+  padding: 38px;
+}
+.plan-gate-details div + div {
+  border-top: 1px solid rgba(17, 19, 15, 0.35);
+  margin-top: 24px;
+  padding-top: 24px;
+}
+.plan-gate-details dt {
+  font: 9px var(--mono);
+  text-transform: uppercase;
+}
+.plan-gate-details dd {
+  font: 12px var(--mono);
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
 .app-loading {
   align-items: center;
   display: flex;
@@ -1553,8 +1619,8 @@ h2 em {
   .setup-panel {
     grid-template-columns: 1fr;
   }
-  .setup-aside {
-    min-height: 240px;
+  .plan-gate-card {
+    grid-template-columns: 1fr;
   }
   .token-reveal {
     grid-template-columns: 1fr;

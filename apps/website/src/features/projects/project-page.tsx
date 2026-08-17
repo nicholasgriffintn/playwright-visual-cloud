@@ -141,7 +141,13 @@ function SetupPanel({ project }: { project: Project }) {
         <code>{project.slug}</code>
         <span>Default branch</span>
         <code>{project.default_branch}</code>
-        <a href="/examples/.github/workflows/visual-tests.yml">View workflow template →</a>
+        <a
+          href="https://github.com/nicholasgriffintn/playwright-visual-cloud/blob/main/examples/.github/workflows/visual-tests.yml"
+          rel="noreferrer"
+          target="_blank"
+        >
+          View workflow template →
+        </a>
       </div>
     </section>
   );

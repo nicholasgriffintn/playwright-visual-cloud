@@ -43,6 +43,7 @@ pnpm --dir apps/website exec wrangler r2 bucket create pvc-images
 pnpm --dir apps/website exec wrangler secret put GITHUB_CLIENT_ID
 pnpm --dir apps/website exec wrangler secret put GITHUB_CLIENT_SECRET
 pnpm --dir apps/website migrate
+pnpm build
 pnpm deploy
 ```
 

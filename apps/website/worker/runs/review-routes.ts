@@ -2,7 +2,7 @@ import { Hono } from "hono";
 
 import { createImageVault } from "../images/vault";
 import { protectBrowserMutations } from "../shared/browser-security";
-import { requireSession, type AppContext } from "../shared/http";
+import { requireProSession, type AppContext } from "../shared/http";
 import { routeParam } from "../shared/request-input";
 import { imageKey } from "../shared/validation";
 import type { Env } from "../types";
@@ -17,20 +17,20 @@ reviewRoutes.post("/builds/:buildId/snapshots/:snapshotId/approve", approveSnaps
 reviewRoutes.get("/builds/:buildId/images/:key", getImage);
 
 async function getBuild(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
 
   return context.json(await runs(context).getBuildForUser(user.id, routeParam(context, "buildId")));
 }
 
 async function approveBuild(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const approved = await runs(context).approveBuild(user.id, routeParam(context, "buildId"));
 
   return context.json({ approved });
 }
 
 async function approveSnapshot(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const snapshot = await runs(context).approveSnapshot(
     user.id,
     routeParam(context, "buildId"),
@@ -41,7 +41,7 @@ async function approveSnapshot(context: AppContext): Promise<Response> {
 }
 
 async function getImage(context: AppContext): Promise<Response> {
-  const { user } = await requireSession(context);
+  const { user } = await requireProSession(context);
   const payload = await runs(context).getBuildForUser(user.id, routeParam(context, "buildId"));
   const object = await createImageVault(context.env.DB, context.env.IMAGES).get(
     payload.build.project_id,

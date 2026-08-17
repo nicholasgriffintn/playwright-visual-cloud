@@ -1,5 +1,7 @@
 import type { WorkspaceRole } from "./shared/validation";
 
+export type Plan = "free" | "pro";
+
 export interface Env {
   DB: D1Database;
   IMAGES: R2Bucket;
@@ -16,6 +18,7 @@ export interface User {
   email: string;
   name: string;
   avatar_url: string | null;
+  plan: Plan;
   created_at: string;
 }
 
