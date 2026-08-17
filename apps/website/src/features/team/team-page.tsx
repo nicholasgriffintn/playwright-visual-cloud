@@ -6,8 +6,10 @@ export function TeamPage({ workspace }: { workspace: Workspace }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     let live = true;
+
     api
       .members(workspace.id)
       .then((result) => {
@@ -25,12 +27,14 @@ export function TeamPage({ workspace }: { workspace: Workspace }) {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+
     try {
       const result = await api.invite(
         workspace.id,
         String(form.get("email") || ""),
         String(form.get("role")) as Member["role"],
       );
+
       setInviteUrl(result.inviteUrl);
       setError(null);
     } catch (cause) {

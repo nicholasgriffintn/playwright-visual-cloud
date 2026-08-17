@@ -12,9 +12,11 @@ export function WorkspacePicker({
 }) {
   const [showForm, setShowForm] = useState(workspaces.length === 0);
   const [error, setError] = useState<string | null>(null);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = String(new FormData(event.currentTarget).get("name") || "");
+
     try {
       onCreated((await api.createWorkspace(name)).workspace);
     } catch (cause) {

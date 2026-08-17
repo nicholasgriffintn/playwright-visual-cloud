@@ -26,7 +26,9 @@ function padTo(png: PNG, width: number, height: number): PNG {
   if (png.width === width && png.height === height) {
     return png;
   }
+
   const out = new PNG({ width, height });
+
   PNG.bitblt(png, out, 0, 0, png.width, png.height, 0, 0);
 
   return out;

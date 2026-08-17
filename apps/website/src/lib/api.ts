@@ -31,6 +31,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       value && typeof value === "object" && "error" in value && typeof value.error === "string"
         ? value.error
         : `${response.status} ${response.statusText}`;
+
     throw new ApiError(response.status, message);
   }
 

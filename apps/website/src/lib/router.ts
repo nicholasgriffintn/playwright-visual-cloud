@@ -12,21 +12,25 @@ export function parseRoute(pathname: string): Route {
   if (pathname === "/") {
     return { kind: "marketing" };
   }
+
   const app = patterns.app.exec(pathname);
 
   if (app) {
     return { kind: "app", ...(app[1] ? { workspaceId: decode(app[1]) } : {}) };
   }
+
   const project = patterns.project.exec(pathname);
 
   if (project?.[1]) {
     return { kind: "project", projectId: decode(project[1]) };
   }
+
   const team = patterns.team.exec(pathname);
 
   if (team?.[1]) {
     return { kind: "team", workspaceId: decode(team[1]) };
   }
+
   const build = patterns.build.exec(pathname);
 
   if (build?.[1]) {
@@ -36,6 +40,7 @@ export function parseRoute(pathname: string): Route {
       ...(build[2] ? { snapshotId: decode(build[2]) } : {}),
     };
   }
+
   const invite = patterns.invite.exec(pathname);
 
   if (invite?.[1]) {

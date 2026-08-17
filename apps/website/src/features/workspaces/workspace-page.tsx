@@ -10,6 +10,7 @@ export function WorkspacePage({ workspace }: { workspace: Workspace }) {
 
   useEffect(() => {
     let live = true;
+
     api
       .projects(workspace.id)
       .then((result) => {
@@ -118,15 +119,18 @@ function ProjectDialog({
   onCreated: (project: Project) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+
     try {
       const result = await api.createProject(workspaceId, {
         name: String(form.get("name") || ""),
         repository: String(form.get("repository") || ""),
         defaultBranch: String(form.get("defaultBranch") || "main"),
       });
+
       onCreated(result.project);
     } catch (cause) {
       setError((cause as Error).message);

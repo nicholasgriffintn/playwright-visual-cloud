@@ -116,11 +116,13 @@ async function resolveIdentity(db: D1Database, identity: ExternalIdentity): Prom
   if (identity.provider !== "github" || !identity.email || identity.emailVerified !== true) {
     throw new AuthError("provider_error", "GitHub must provide a verified email address.");
   }
+
   const existingIdentity = await findIdentity(db, identity.provider, identity.providerSubject);
 
   if (existingIdentity) {
     return existingIdentity;
   }
+
   const email = identity.email.toLowerCase();
   const existingEmail = await db
     .prepare("SELECT * FROM users WHERE email = ?1 COLLATE NOCASE")
@@ -132,6 +134,7 @@ async function resolveIdentity(db: D1Database, identity: ExternalIdentity): Prom
   const statements = existingEmail
     ? []
     : newUserStatements(db, userId, email, name, claimString(identity.claims.avatar_url));
+
   statements.push(
     db
       .prepare(
@@ -210,8 +213,8 @@ async function consumeOAuthState(
   return {
     stateHash: row.state_hash!,
     provider: row.provider!,
-    createdAt: new Date(row.created_at!),
-    expiresAt: new Date(row.expires_at!),
+    createdAt: new Date(row.created_at),
+    expiresAt: new Date(row.expires_at),
     context: JSON.parse(row.context_json ?? "{}") as Record<string, string>,
     ...(row.code_verifier ? { codeVerifier: row.code_verifier } : {}),
     ...(row.nonce ? { nonce: row.nonce } : {}),

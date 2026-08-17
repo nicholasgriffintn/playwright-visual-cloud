@@ -18,6 +18,7 @@ export function SnapshotViewer({
   const [slider, setSlider] = useState(50);
   const [approving, setApproving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     setMode(snapshot.diff_key ? "slider" : "split");
     setSlider(50);

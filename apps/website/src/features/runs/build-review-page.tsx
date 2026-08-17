@@ -16,6 +16,7 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
       setError((cause as Error).message);
     }
   }, [buildId]);
+
   useEffect(() => {
     void load();
   }, [load]);
@@ -27,6 +28,7 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
   if (!payload) {
     return <p className="loading-line">Loading visual run…</p>;
   }
+
   const selected =
     payload.snapshots.find((snapshot) => snapshot.id === snapshotId) ?? payload.snapshots[0];
   const pending = payload.snapshots.filter(

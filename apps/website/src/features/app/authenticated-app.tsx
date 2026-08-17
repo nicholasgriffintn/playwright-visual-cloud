@@ -20,6 +20,7 @@ export function AuthenticatedApp({ route, user, onLogout }: AuthenticatedAppProp
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     api
       .workspaces()

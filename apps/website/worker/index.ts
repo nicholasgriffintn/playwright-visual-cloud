@@ -65,6 +65,7 @@ function handleError(cause: Error, context: AppContext): Response {
   if (status === 500) {
     console.error("Request failed", { path: context.req.path, cause: String(cause) });
   }
+
   const message = status === 500 ? "Internal server error" : cause.message;
 
   return context.json({ error: message }, status);

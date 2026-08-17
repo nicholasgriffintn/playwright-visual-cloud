@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { BuildRecord, VisualCloudClient } from "./client";
+import type { BuildRecord} from "./client";
+import { VisualCloudClient } from "./client";
 
 const HELP = `playwright-visual-cloud (pvc)
 
@@ -39,6 +40,7 @@ function parseArgs(): {
 
     if (item.includes("=")) {
       const [key, value] = item.split("=", 2);
+
       flags[key] = value;
       continue;
     }
@@ -107,6 +109,7 @@ async function main() {
 
       return;
     }
+
     for (const build of builds) {
       console.log(formatBuild(build));
     }
@@ -123,6 +126,7 @@ async function main() {
       } else {
         console.log("No builds found.");
       }
+
       process.exit(1);
 
       return;
@@ -169,6 +173,7 @@ async function main() {
       if (!flags.json) {
         console.log(`\nreview: ${client.config.serverUrl}/builds/${encodeURIComponent(build.id)}`);
       }
+
       process.exit(1);
     }
 

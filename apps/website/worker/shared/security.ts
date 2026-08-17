@@ -3,6 +3,7 @@ const TOKEN_BYTE_LENGTH = 32;
 
 function encode(bytes: Uint8Array): string {
   let binary = "";
+
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }

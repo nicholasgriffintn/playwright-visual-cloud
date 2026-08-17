@@ -22,6 +22,7 @@ export async function readObject(
   if (length > maxBytes) {
     throw new HTTPException(413, { message: "Request body is too large" });
   }
+
   try {
     const body: unknown = await context.req.json();
 
@@ -127,6 +128,7 @@ function optionalNumber(value: unknown, label: string): number | null {
   if (value === null || value === undefined) {
     return null;
   }
+
   const number = Number(value);
 
   if (!Number.isFinite(number) || number < 0) {

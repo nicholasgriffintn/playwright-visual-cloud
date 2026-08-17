@@ -15,5 +15,6 @@ export const protectBrowserMutations: MiddlewareHandler<{ Bindings: Env }> = asy
       throw new HTTPException(403, { message: "Request origin is not allowed" });
     }
   }
+
   await next();
 };

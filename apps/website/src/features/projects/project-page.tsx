@@ -12,6 +12,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     let live = true;
+
     Promise.all([api.project(projectId), api.builds(projectId)])
       .then(([projectResult, buildResult]) => {
         if (live) {
@@ -179,6 +180,7 @@ function BuildRow({ build }: { build: Build }) {
 
 function TokenReveal({ token, onClose }: { token: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
+
   async function copy() {
     await navigator.clipboard.writeText(token);
     setCopied(true);

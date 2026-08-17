@@ -25,6 +25,7 @@ export function createProjectAccess(db: D1Database): ProjectAccess {
       if (!row) {
         throw new DomainError("Invalid project token", 401);
       }
+
       await db
         .prepare("UPDATE project_tokens SET last_used_at = datetime('now') WHERE id = ?1")
         .bind(row.token_id)

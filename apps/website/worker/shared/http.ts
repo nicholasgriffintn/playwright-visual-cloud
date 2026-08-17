@@ -24,6 +24,7 @@ export async function requireSession(context: AppContext): Promise<SessionPrinci
   if (!token) {
     throw new HTTPException(401, { message: "Sign in required" });
   }
+
   const origin = canonicalOrigin(context.req.raw, context.env.SITE_ORIGIN);
   const user = await createAuthentication(context.env.DB, context.env, origin).currentUser(token);
 

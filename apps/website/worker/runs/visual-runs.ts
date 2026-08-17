@@ -124,6 +124,7 @@ export function createVisualRuns(db: D1Database): VisualRuns {
       .first<{ pending: number | null; approved: number | null }>();
     const status =
       (counts?.pending ?? 0) > 0 ? "pending" : (counts?.approved ?? 0) > 0 ? "approved" : "none";
+
     await db
       .prepare("UPDATE builds SET review_status = ?1 WHERE id = ?2")
       .bind(status, buildId)
@@ -186,6 +187,7 @@ export function createVisualRuns(db: D1Database): VisualRuns {
 
     async finishBuild(projectId, buildId) {
       const build = await requireProjectBuild(projectId, buildId);
+
       await refreshReviewStatus(buildId);
       await db
         .prepare(
@@ -229,6 +231,7 @@ export function createVisualRuns(db: D1Database): VisualRuns {
       if (autoApproved) {
         await promote(build, snapshot);
       }
+
       await refreshReviewStatus(buildId);
 
       return snapshot;
@@ -262,6 +265,7 @@ export function createVisualRuns(db: D1Database): VisualRuns {
       if (!snapshot) {
         throw new DomainError("Snapshot not found", 404);
       }
+
       await promote(build, snapshot);
       await db
         .prepare(
@@ -283,9 +287,11 @@ export function createVisualRuns(db: D1Database): VisualRuns {
       const pending = current.snapshots.filter(
         (snapshot) => snapshot.status === "failed" || snapshot.status === "new",
       );
+
       for (const snapshot of pending) {
         await promote(build, snapshot);
       }
+
       await db
         .prepare(
           "UPDATE snapshots SET status = 'approved', approved_at = datetime('now') WHERE build_id = ?1 AND status IN ('failed','new')",

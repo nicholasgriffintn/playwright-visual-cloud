@@ -4,15 +4,18 @@
   "license": "Apache-2.0",
   "scripts": {
     "build": "pnpm -r build",
-    "check": "pnpm -r --if-present check",
+    "check": "pnpm fix && pnpm -r --if-present check",
     "setup": "pnpm install",
     "dev": "pnpm --filter @playwright-visual-cloud/website dev",
     "build:cli": "pnpm --filter playwright-visual-cloud build",
     "build:server": "pnpm --filter @playwright-visual-cloud/website build",
     "build:ui": "pnpm --dir apps/website build",
     "build:website": "pnpm --dir apps/website build",
-    "fmt": "oxlint --fix && oxfmt",
-    "fmt:check": "oxfmt --check",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "fix": "oxlint --fix && oxfmt",
     "typecheck": "pnpm -r typecheck",
     "typecheck:cli": "pnpm --filter playwright-visual-cloud typecheck",
     "typecheck:server": "pnpm --filter @playwright-visual-cloud/website exec tsc -p tsconfig.worker.json --noEmit",
@@ -26,6 +29,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.10.0",
     "oxfmt": "^0.63.0",
-    "oxlint": "^1.78.0"
+    "oxlint": "^1.78.0",
+    "oxlint-tsgolint": "^7.0.2001"
   }
 }

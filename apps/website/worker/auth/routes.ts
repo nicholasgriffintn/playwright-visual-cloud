@@ -34,6 +34,7 @@ async function startGitHub(context: AppContext): Promise<Response> {
   if (!state) {
     throw new AuthError("provider_error");
   }
+
   context.header(
     "Set-Cookie",
     serializeSessionCookie(STATE_COOKIE, state, { maxAge: 600, priority: "high" }),
@@ -68,6 +69,7 @@ async function completeGitHub(context: AppContext): Promise<Response> {
     if (result.status !== "authenticated") {
       throw new AuthError("unsupported_operation");
     }
+
     context.header("Set-Cookie", expiredCookie(STATE_COOKIE), { append: true });
     context.header("Set-Cookie", expiredCookie(RETURN_COOKIE), { append: true });
     context.header("Set-Cookie", sessionCookie(result.session.token, result.session.expiresAt), {
@@ -77,6 +79,7 @@ async function completeGitHub(context: AppContext): Promise<Response> {
     return context.redirect(appDestination(context, returnTo).href);
   } catch (cause) {
     const codeValue = cause instanceof AuthError ? cause.code : "authentication_failed";
+
     console.error("GitHub OAuth callback failed", { code: codeValue });
 
     return failedCallback(context, codeValue);
@@ -92,12 +95,14 @@ async function getSession(context: AppContext): Promise<Response> {
     if (cause instanceof HTTPException && cause.status === 401) {
       return context.json({ user: null });
     }
+
     throw cause;
   }
 }
 
 async function logout(context: AppContext): Promise<Response> {
   const principal = await requireSession(context);
+
   await authenticationFor(context).logout(principal.token);
   context.header("Set-Cookie", expiredCookie(SESSION_COOKIE));
 
@@ -121,6 +126,7 @@ async function assertRateLimit(context: AppContext): Promise<void> {
 
 function failedCallback(context: AppContext, error: string): Response {
   const destination = appDestination(context);
+
   destination.searchParams.set("error", error);
   context.header("Set-Cookie", expiredCookie(STATE_COOKIE), { append: true });
   context.header("Set-Cookie", expiredCookie(RETURN_COOKIE), { append: true });

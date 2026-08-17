@@ -76,6 +76,7 @@ async function getBaseline(context: AppContext): Promise<Response> {
 async function putImage(context: AppContext): Promise<Response> {
   const { project } = await requireProjectToken(context);
   const key = imageKey(context.req.param("key"), "image key");
+
   await images(context).put(
     project.id,
     key,

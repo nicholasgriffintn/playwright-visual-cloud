@@ -5,6 +5,7 @@ import { routeHref } from "../../lib/router";
 export function InvitePage({ token }: { token: string }) {
   const [state, setState] = useState<"accepting" | "accepted" | "error">("accepting");
   const [message, setMessage] = useState("Joining workspace…");
+
   useEffect(() => {
     api
       .acceptInvite(token)

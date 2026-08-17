@@ -96,6 +96,7 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
 
     async createWorkspace(userId, name, slug) {
       const id = crypto.randomUUID();
+
       try {
         await db.batch([
           db
@@ -111,6 +112,7 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
         if (String(cause).includes("UNIQUE")) {
           throw new DomainError("That workspace name is already in use", 409);
         }
+
         throw cause;
       }
 
@@ -154,6 +156,7 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
         if (String(cause).includes("UNIQUE")) {
           throw new DomainError("That project name is already in use", 409);
         }
+
         throw cause;
       }
     },
@@ -178,6 +181,7 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
     async createInvite(userId, workspaceId, input) {
       await requireOwner(workspaceId, userId);
       const rawToken = randomToken("pvci_");
+
       try {
         await db
           .prepare(
@@ -197,6 +201,7 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
         if (String(cause).includes("UNIQUE")) {
           throw new DomainError("An active invite already exists", 409);
         }
+
         throw cause;
       }
 
@@ -217,6 +222,7 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
           400,
         );
       }
+
       await db.batch([
         db
           .prepare(
@@ -240,7 +246,9 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
       if (access.role !== "owner") {
         throw new DomainError("Only workspace owners can create project tokens", 403);
       }
+
       const token = randomToken("pvc_");
+
       await db
         .prepare(
           `INSERT INTO project_tokens (id, project_id, name, token_prefix, token_hash, created_by)

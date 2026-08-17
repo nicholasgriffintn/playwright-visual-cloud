@@ -48,11 +48,13 @@ function parseOnMissing(
   if (!value) {
     return undefined;
   }
+
   const normalised = value.trim().toLowerCase();
 
   if (normalised === "accept" || normalised === "pending" || normalised === "fail") {
     return normalised;
   }
+
   throw new Error(
     `playwright-visual-cloud: invalid PVC_ON_MISSING=${value}. Use "accept", "pending", or "fail".`,
   );
@@ -65,11 +67,13 @@ function parseFailOnDiff(
   if (typeof value === "boolean") {
     return value;
   }
+
   const envValue = value ?? fallback;
 
   if (envValue === undefined) {
     return true;
   }
+
   const normalised = envValue.trim().toLowerCase();
 
   if (normalised === "0" || normalised === "false" || normalised === "off" || normalised === "no") {
@@ -79,6 +83,7 @@ function parseFailOnDiff(
   if (normalised === "1" || normalised === "true" || normalised === "on" || normalised === "yes") {
     return true;
   }
+
   throw new Error(
     `playwright-visual-cloud: invalid PVC_FAIL_ON_DIFF=${envValue}. Use 0/1, true/false, on/off, or yes/no.`,
   );
@@ -88,6 +93,7 @@ function parseString(value: string | undefined, label: string): string | undefin
   if (!value) {
     return undefined;
   }
+
   const trimmed = value.trim();
 
   if (!trimmed) {
@@ -101,6 +107,7 @@ export function resolveConfig(): VisualCloudConfig {
   if (cached) {
     return cached;
   }
+
   const git = detectGit();
 
   const serverUrl = parseString(overrides.serverUrl ?? env("PVC_SERVER_URL"), "PVC_SERVER_URL");

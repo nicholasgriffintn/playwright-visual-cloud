@@ -8,6 +8,7 @@ export async function resolveGitHubIdentity(tokens: OAuthTokenSet): Promise<Exte
   if (!isRecord(profile)) {
     throw new AuthError("provider_error");
   }
+
   const subject = identifier(profile.id);
   const email = await verifiedEmail(profile, tokens.accessToken);
 
@@ -36,6 +37,7 @@ async function verifiedEmail(
   if (!Array.isArray(value)) {
     throw new AuthError("provider_error");
   }
+
   const emails = value.filter(isRecord);
   const selected =
     emails.find((entry) => isVerifiedEmail(entry) && text(entry.email) === publicEmail) ??
@@ -80,6 +82,7 @@ function identifier(value: unknown): string {
   if (typeof value === "string" && value.length > 0 && value.length <= 256) {
     return value;
   }
+
   throw new AuthError("provider_error");
 }
 

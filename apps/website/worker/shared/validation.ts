@@ -11,6 +11,7 @@ export function requiredString(value: unknown, label: string, maxLength = 200): 
   if (typeof value !== "string") {
     throw new ValidationError(`${label} is required`);
   }
+
   const result = value.trim();
 
   if (!result) {
@@ -63,6 +64,7 @@ export function parseRole(value: unknown): WorkspaceRole {
   if (value === "owner" || value === "member") {
     return value;
   }
+
   throw new ValidationError("role must be owner or member");
 }
 
@@ -75,6 +77,7 @@ export function positiveInteger(
   if (value === undefined) {
     return fallback;
   }
+
   const parsed = Number(value);
 
   if (!Number.isInteger(parsed) || parsed < 1 || parsed > max) {

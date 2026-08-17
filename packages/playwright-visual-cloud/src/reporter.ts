@@ -19,10 +19,12 @@ export default class VisualCloudReporter implements Reporter {
     } catch {
       return;
     }
+
     try {
       // Reporters and matchers execute in separate Playwright processes, so the
       // idempotent external run ID is the shared source of truth for the build.
       const build = await client.ensureBuild();
+
       await client.finishBuild(build.id);
       const { snapshots } = await client.getBuild(build.id);
       const failed = snapshots.filter((s) => s.status === "failed").length;
@@ -32,6 +34,7 @@ export default class VisualCloudReporter implements Reporter {
       ).length;
 
       const url = `${client.config.serverUrl}/builds/${encodeURIComponent(build.id)}`;
+
       console.log("");
       console.log("  playwright-visual-cloud");
       console.log(`    ${passed} matched, ${failed} changed, ${fresh} new`);
@@ -39,6 +42,7 @@ export default class VisualCloudReporter implements Reporter {
       if (failed > 0 || fresh > 0) {
         console.log(`    review: ${url}`);
       }
+
       console.log("");
     } catch (err) {
       console.error(`  playwright-visual-cloud: failed to finalize build — ${String(err)}`);

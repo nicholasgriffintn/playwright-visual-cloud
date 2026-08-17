@@ -12,6 +12,7 @@ export function useSession() {
       setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);

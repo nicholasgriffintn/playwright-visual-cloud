@@ -6,6 +6,7 @@ export function useRoute() {
 
   useEffect(() => {
     const update = () => setRoute(parseRoute(window.location.pathname));
+
     window.addEventListener("popstate", update);
 
     return () => window.removeEventListener("popstate", update);

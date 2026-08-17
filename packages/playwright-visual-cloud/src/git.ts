@@ -22,6 +22,7 @@ export function detectGit(): GitInfo {
   if (cached) {
     return cached;
   }
+
   cached = {
     branch: run("git rev-parse --abbrev-ref HEAD"),
     commit: run("git rev-parse HEAD"),

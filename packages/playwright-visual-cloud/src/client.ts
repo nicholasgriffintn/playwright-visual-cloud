@@ -1,4 +1,5 @@
-import { resolveConfig, VisualCloudConfig } from "./config";
+import type { VisualCloudConfig } from "./config";
+import { resolveConfig } from "./config";
 import { createHash } from "node:crypto";
 
 export interface BuildRecord {
@@ -65,6 +66,7 @@ export class VisualCloudClient {
 
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     let res: Response;
+
     try {
       res = await fetch(`${this.config.serverUrl}${path}`, {
         ...init,
@@ -76,6 +78,7 @@ export class VisualCloudClient {
 
     let body: unknown = null;
     let bodyText = "";
+
     try {
       bodyText = await res.text();
 
@@ -89,6 +92,7 @@ export class VisualCloudClient {
         typeof body === "object" && body !== null && "error" in body
           ? String((body as { error?: unknown }).error)
           : bodyText;
+
       throw new ApiError(
         res.status,
         `${init.method ?? "GET"} ${path} → ${res.status}: ${errorMessage}`,
@@ -131,6 +135,7 @@ export class VisualCloudClient {
     if (typeof limit === "number") {
       params.set("limit", String(limit));
     }
+
     const path = `/api/builds${params.toString() ? `?${params.toString()}` : ""}`;
     const response = await this.request<BuildRecordList>(path);
 
@@ -146,6 +151,7 @@ export class VisualCloudClient {
   async resolveBaseline(name: string, variant: string): Promise<BaselineInfo | null> {
     const { branch } = this.config;
     const qs = new URLSearchParams();
+
     qs.set("branch", branch);
     qs.set("name", name);
     qs.set("variant", variant);
@@ -155,12 +161,14 @@ export class VisualCloudClient {
       if (error instanceof ApiError && error.status === 404) {
         return null;
       }
+
       throw error;
     }
   }
 
   async downloadImage(key: string): Promise<Buffer> {
     let res: Response;
+
     try {
       res = await fetch(`${this.config.serverUrl}/api/images/${key}`, {
         headers: this.headers(),

@@ -1,13 +1,15 @@
-import {
+import type {
   ElementHandle,
-  expect as baseExpect,
-  test,
   Page,
   Locator,
-  PageScreenshotOptions,
+  PageScreenshotOptions} from "@playwright/test";
+import {
+  expect as baseExpect,
+  test
 } from "@playwright/test";
 import { getBuild, getClient } from "./client";
-import { comparePngs, CompareOptions, pngDimensions } from "./compare";
+import type { CompareOptions} from "./compare";
+import { comparePngs, pngDimensions } from "./compare";
 
 export interface VisualSnapshotOptions extends CompareOptions {
   fullPage?: boolean;
@@ -42,6 +44,7 @@ const snapshotCounters = new Map<string, number>();
 
 function nextSnapshotName(rawName: string): string {
   const next = (snapshotCounters.get(rawName) ?? 0) + 1;
+
   snapshotCounters.set(rawName, next);
 
   return next === 1 ? rawName : `${rawName} (${next})`;
@@ -66,14 +69,16 @@ async function capture(subject: Page | Locator, options: VisualSnapshotOptions):
         const handle = await page.addStyleTag({ path: stylesheet });
 
         if (handle) {
-          styleTags.push(handle as unknown as ElementHandle);
+          styleTags.push(handle);
         }
       }
+
       cleanup = async () => {
         for (const handle of styleTags) {
           try {
             await handle.evaluate((el: Element) => el.remove());
           } catch {}
+
           await handle.dispose().catch(() => {});
         }
       };
@@ -132,6 +137,7 @@ export const toMatchVisualSnapshot = async function (
 
   if (!baseline) {
     const actualKey = await client.uploadImage(actualPng);
+
     await client.recordSnapshot(build.id, {
       name: snapshotName,
       variant,
@@ -167,6 +173,7 @@ export const toMatchVisualSnapshot = async function (
 
   if (result.pass) {
     const actualKey = await client.uploadImage(actualPng);
+
     await client.recordSnapshot(build.id, {
       name: snapshotName,
       variant,
@@ -186,6 +193,7 @@ export const toMatchVisualSnapshot = async function (
     client.uploadImage(actualPng),
     client.uploadImage(result.diffPng),
   ]);
+
   await client.recordSnapshot(build.id, {
     name: snapshotName,
     variant,

@@ -35,6 +35,7 @@ export function createImageVault(db: D1Database, bucket: R2Bucket): ImageVault {
       if (bytes.byteLength === 0 || bytes.byteLength > MAX_IMAGE_BYTES) {
         throw new DomainError("Image must be between 1 byte and 20 MB", 400);
       }
+
       const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("");
@@ -42,6 +43,7 @@ export function createImageVault(db: D1Database, bucket: R2Bucket): ImageVault {
       if (digest !== key) {
         throw new DomainError("Image key does not match its content", 400);
       }
+
       await bucket.put(key, bytes, { httpMetadata: { contentType: "image/png" } });
     },
 
@@ -49,6 +51,7 @@ export function createImageVault(db: D1Database, bucket: R2Bucket): ImageVault {
       if (!(await isReferenced(projectId, key))) {
         throw new DomainError("Image not found", 404);
       }
+
       const object = await bucket.get(key);
 
       if (!object) {
