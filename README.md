@@ -67,7 +67,7 @@ test("homepage", async ({ page }) => {
 });
 ```
 
-Set `PVC_SERVER_URL` and `PVC_TOKEN` in CI. Add the reporter to
+Set `PVC_SERVER_URL` and `PVC_TOKEN` in CI. Set `PVC_ENVIRONMENT` when you want to separate build lanes such as `smoke` and `release`. Add the reporter to
 `playwright.config.ts` for build summaries and review links:
 
 ```ts

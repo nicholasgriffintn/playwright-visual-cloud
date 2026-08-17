@@ -1,10 +1,12 @@
+import { createHash } from "node:crypto";
+
 import type { VisualCloudConfig } from "./config";
 import { resolveConfig } from "./config";
-import { createHash } from "node:crypto";
 
 export interface BuildRecord {
   id: string;
   external_id: string;
+  environment: string;
   branch: string;
   commit_sha: string;
   message: string;
@@ -107,7 +109,7 @@ export class VisualCloudClient {
   }
 
   async ensureBuild(): Promise<BuildRecord> {
-    const { branch, commit, message, runId } = this.config;
+    const { branch, commit, environment, message, runId } = this.config;
 
     return this.request<BuildRecord>("/api/builds", {
       method: "POST",
@@ -115,6 +117,7 @@ export class VisualCloudClient {
       body: JSON.stringify({
         branch,
         commitSha: commit,
+        environment,
         message,
         externalId: runId,
       }),
@@ -131,6 +134,8 @@ export class VisualCloudClient {
 
   async listBuilds(limit?: number): Promise<BuildRecord[]> {
     const params = new URLSearchParams();
+
+    params.set("environment", this.config.environment);
 
     if (typeof limit === "number") {
       params.set("limit", String(limit));

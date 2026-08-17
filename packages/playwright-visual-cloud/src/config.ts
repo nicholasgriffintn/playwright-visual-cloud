@@ -5,6 +5,8 @@ export interface VisualCloudConfig {
   serverUrl: string;
   /** Project-scoped CI token generated in the Visual Cloud dashboard. */
   token: string;
+  /** Named execution lane used to group and filter builds. */
+  environment: string;
   /** Current branch. Auto-detected from CI env / git if omitted. */
   branch: string;
   /** Current commit sha. Auto-detected if omitted. */
@@ -89,7 +91,11 @@ function parseFailOnDiff(
   );
 }
 
-function parseString(value: string | undefined, label: string): string | undefined {
+function parseString(
+  value: string | undefined,
+  label: string,
+  maxLength?: number,
+): string | undefined {
   if (!value) {
     return undefined;
   }
@@ -98,6 +104,10 @@ function parseString(value: string | undefined, label: string): string | undefin
 
   if (!trimmed) {
     throw new Error(`playwright-visual-cloud: ${label} cannot be empty.`);
+  }
+
+  if (maxLength !== undefined && trimmed.length > maxLength) {
+    throw new Error(`playwright-visual-cloud: ${label} cannot exceed ${maxLength} characters.`);
   }
 
   return trimmed;
@@ -112,6 +122,9 @@ export function resolveConfig(): VisualCloudConfig {
 
   const serverUrl = parseString(overrides.serverUrl ?? env("PVC_SERVER_URL"), "PVC_SERVER_URL");
   const token = parseString(overrides.token ?? env("PVC_TOKEN"), "PVC_TOKEN");
+  const environment =
+    parseString(overrides.environment ?? env("PVC_ENVIRONMENT"), "PVC_ENVIRONMENT", 80) ??
+    "default";
 
   if (!serverUrl) {
     throw new Error(
@@ -147,12 +160,20 @@ export function resolveConfig(): VisualCloudConfig {
   const githubRunId = parseString(env("GITHUB_RUN_ID"), "GITHUB_RUN_ID");
   const githubRunAttempt = parseString(env("GITHUB_RUN_ATTEMPT"), "GITHUB_RUN_ATTEMPT");
 
-  const runId =
+  const sourceRunId =
     parseString(overrides.runId, "PVC_RUN_ID") ??
     parseString(env("PVC_RUN_ID"), "PVC_RUN_ID") ??
     (githubRunId ? `${githubRunId}-${githubRunAttempt ?? "1"}` : undefined) ??
     parseString(env("CI_PIPELINE_ID"), "CI_PIPELINE_ID") ??
     commit;
+  const runId = environment === "default" ? sourceRunId : `${environment}:${sourceRunId}`;
+
+  if (runId.length > 200) {
+    throw new Error(
+      "playwright-visual-cloud: environment and run ID cannot exceed 200 characters.",
+    );
+  }
+
   const message =
     parseString(overrides.message, "message") ?? parseString(git.message, "commit message") ?? "";
   const onMissingBaseline =
@@ -163,6 +184,7 @@ export function resolveConfig(): VisualCloudConfig {
   cached = {
     serverUrl: serverUrl.replace(/\/+$/, ""),
     token,
+    environment,
     branch,
     commit,
     message,

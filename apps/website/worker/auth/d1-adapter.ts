@@ -204,15 +204,24 @@ async function consumeOAuthState(
       "DELETE FROM oauth_states WHERE state_hash = ?1 AND julianday(expires_at) > julianday('now') RETURNING *",
     )
     .bind(stateHash)
-    .first<Record<string, string | null>>();
+    .first<{
+      state_hash: string;
+      provider: string;
+      code_verifier: string | null;
+      nonce: string | null;
+      redirect_uri: string | null;
+      context_json: string | null;
+      created_at: string;
+      expires_at: string;
+    }>();
 
   if (!row) {
     return null;
   }
 
   return {
-    stateHash: row.state_hash!,
-    provider: row.provider!,
+    stateHash: row.state_hash,
+    provider: row.provider,
     createdAt: new Date(row.created_at),
     expiresAt: new Date(row.expires_at),
     context: JSON.parse(row.context_json ?? "{}") as Record<string, string>,

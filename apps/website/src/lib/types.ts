@@ -43,6 +43,7 @@ export interface Build {
   id: string;
   project_id: string;
   external_id: string;
+  environment: string;
   branch: string;
   commit_sha: string;
   message: string;

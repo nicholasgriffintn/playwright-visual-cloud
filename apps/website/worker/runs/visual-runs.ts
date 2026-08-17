@@ -3,6 +3,7 @@ import type { Build, Snapshot } from "../types";
 
 export interface CreateBuildInput {
   externalId: string;
+  environment: string;
   branch: string;
   commitSha: string;
   message: string;
@@ -36,8 +37,14 @@ export interface BuildPayload {
 
 export interface VisualRuns {
   createBuild(projectId: string, input: CreateBuildInput): Promise<Build>;
-  listProjectBuilds(projectId: string, limit: number): Promise<Build[]>;
-  listBuilds(userId: string, projectId: string, limit: number): Promise<Build[]>;
+  listProjectBuilds(projectId: string, limit: number, environment?: string): Promise<Build[]>;
+  listBuilds(
+    userId: string,
+    projectId: string,
+    limit: number,
+    environment?: string,
+  ): Promise<Build[]>;
+  listEnvironments(userId: string, projectId: string): Promise<string[]>;
   getBuildForProject(projectId: string, buildId: string): Promise<BuildPayload>;
   getBuildForUser(userId: string, buildId: string): Promise<BuildPayload>;
   finishBuild(projectId: string, buildId: string): Promise<Build>;
@@ -93,6 +100,20 @@ export function createVisualRuns(db: D1Database): VisualRuns {
     return build;
   }
 
+  async function requireProjectAccess(userId: string, projectId: string): Promise<void> {
+    const access = await db
+      .prepare(
+        `SELECT 1 AS allowed FROM projects p JOIN workspace_members m ON m.workspace_id = p.workspace_id
+         WHERE p.id = ?1 AND m.user_id = ?2`,
+      )
+      .bind(projectId, userId)
+      .first<{ allowed: number }>();
+
+    if (!access) {
+      throw new DomainError("Project not found", 404);
+    }
+  }
+
   async function promote(build: Build, snapshot: Snapshot): Promise<void> {
     await db
       .prepare(
@@ -135,16 +156,17 @@ export function createVisualRuns(db: D1Database): VisualRuns {
     async createBuild(projectId, input) {
       return (await db
         .prepare(
-          `INSERT INTO builds (id, project_id, external_id, branch, commit_sha, message)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+          `INSERT INTO builds (id, project_id, external_id, environment, branch, commit_sha, message)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
          ON CONFLICT (project_id, external_id) DO UPDATE SET branch = excluded.branch,
-           commit_sha = excluded.commit_sha, message = excluded.message
+           commit_sha = excluded.commit_sha, environment = excluded.environment, message = excluded.message
          RETURNING *`,
         )
         .bind(
           crypto.randomUUID(),
           projectId,
           input.externalId,
+          input.environment,
           input.branch,
           input.commitSha,
           input.message,
@@ -152,29 +174,38 @@ export function createVisualRuns(db: D1Database): VisualRuns {
         .first<Build>())!;
     },
 
-    async listProjectBuilds(projectId, limit) {
-      const result = await db
-        .prepare("SELECT * FROM builds WHERE project_id = ?1 ORDER BY created_at DESC LIMIT ?2")
-        .bind(projectId, limit)
-        .all<Build>();
+    async listProjectBuilds(projectId, limit, environment) {
+      const result = environment
+        ? await db
+            .prepare(
+              "SELECT * FROM builds WHERE project_id = ?1 AND environment = ?2 ORDER BY created_at DESC LIMIT ?3",
+            )
+            .bind(projectId, environment, limit)
+            .all<Build>()
+        : await db
+            .prepare("SELECT * FROM builds WHERE project_id = ?1 ORDER BY created_at DESC LIMIT ?2")
+            .bind(projectId, limit)
+            .all<Build>();
 
       return result.results;
     },
 
-    async listBuilds(userId, projectId, limit) {
-      const access = await db
+    async listBuilds(userId, projectId, limit, environment) {
+      await requireProjectAccess(userId, projectId);
+
+      return this.listProjectBuilds(projectId, limit, environment);
+    },
+
+    async listEnvironments(userId, projectId) {
+      await requireProjectAccess(userId, projectId);
+      const result = await db
         .prepare(
-          `SELECT 1 AS allowed FROM projects p JOIN workspace_members m ON m.workspace_id = p.workspace_id
-         WHERE p.id = ?1 AND m.user_id = ?2`,
+          "SELECT DISTINCT environment FROM builds WHERE project_id = ?1 ORDER BY environment",
         )
-        .bind(projectId, userId)
-        .first<{ allowed: number }>();
+        .bind(projectId)
+        .all<{ environment: string }>();
 
-      if (!access) {
-        throw new DomainError("Project not found", 404);
-      }
-
-      return this.listProjectBuilds(projectId, limit);
+      return result.results.map(({ environment }) => environment);
     },
 
     async getBuildForProject(projectId, buildId) {

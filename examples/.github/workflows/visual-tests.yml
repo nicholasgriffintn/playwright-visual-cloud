@@ -10,6 +10,7 @@ jobs:
     env:
       PVC_SERVER_URL: ${{ vars.PVC_SERVER_URL }}
       PVC_TOKEN: ${{ secrets.PVC_TOKEN }}
+      PVC_ENVIRONMENT: ci
       # Chromatic-style flow: don't fail tests on diffs; gate on review instead.
       PVC_FAIL_ON_DIFF: "0"
     steps:

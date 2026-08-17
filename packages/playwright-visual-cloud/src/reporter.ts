@@ -1,4 +1,5 @@
 import type { Reporter, FullResult } from "@playwright/test/reporter";
+
 import { VisualCloudClient } from "./client";
 
 /**

@@ -1074,6 +1074,28 @@ h2 em {
   justify-content: space-between;
   padding-bottom: 18px;
 }
+.run-controls {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+.run-controls label {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.run-controls label > span {
+  color: var(--muted);
+  font: 9px var(--mono);
+  text-transform: uppercase;
+}
+.run-controls select {
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  min-height: 36px;
+  padding: 0 34px 0 12px;
+}
 .run-count,
 .member-panel header span {
   align-items: center;
@@ -1618,6 +1640,15 @@ h2 em {
   }
   .setup-panel {
     grid-template-columns: 1fr;
+  }
+  .runs-section > header {
+    align-items: start;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .run-controls {
+    justify-content: space-between;
+    width: 100%;
   }
   .plan-gate-card {
     grid-template-columns: 1fr;

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+
 import { api } from "../../lib/api";
+import { errorMessage } from "../../lib/errors";
 import { shortCommit } from "../../lib/format";
 import { routeHref } from "../../lib/router";
 import type { BuildPayload } from "../../lib/types";
@@ -13,7 +15,7 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
       setPayload(await api.build(buildId));
       setError(null);
     } catch (cause) {
-      setError((cause as Error).message);
+      setError(errorMessage(cause));
     }
   }, [buildId]);
 
@@ -43,7 +45,9 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
             <span>Build</span> {shortCommit(payload.build.commit_sha)}
           </p>
           <h1>{payload.build.message || "Visual run"}</h1>
-          <p>{payload.build.branch}</p>
+          <p>
+            {payload.build.environment} · {payload.build.branch}
+          </p>
           <div>
             <span className={`status-chip ${payload.build.review_status}`}>
               {payload.build.review_status === "none" ? "clean" : payload.build.review_status}
@@ -57,7 +61,7 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
                 void api
                   .approveBuild(buildId)
                   .then(load)
-                  .catch((cause: Error) => setError(cause.message))
+                  .catch((cause: unknown) => setError(errorMessage(cause)))
               }
               type="button"
             >
@@ -68,6 +72,7 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
         <nav className="snapshot-list" aria-label="Snapshots">
           {payload.snapshots.map((snapshot) => (
             <a
+              aria-label={`${snapshot.name}, ${snapshot.variant}`}
               className={snapshot.id === selected?.id ? "active" : ""}
               href={routeHref({ kind: "build", buildId, snapshotId: snapshot.id })}
               key={snapshot.id}

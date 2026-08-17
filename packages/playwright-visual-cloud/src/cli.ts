@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import type { BuildRecord} from "./client";
+import type { BuildRecord } from "./client";
 import { VisualCloudClient } from "./client";
 
 const HELP = `playwright-visual-cloud (pvc)
@@ -14,6 +14,7 @@ Usage:
 Environment:
   PVC_SERVER_URL   Worker URL (required)
   PVC_TOKEN        Project-scoped CI token (required)
+  PVC_ENVIRONMENT  Build environment (default: default)
 `;
 
 function parseArgs(): {
@@ -64,9 +65,7 @@ function json(value: unknown) {
 }
 
 function formatBuild(build: BuildRecord): string {
-  return `${build.id}  ${String(build.branch || "").padEnd(20)} ${String(build.commit_sha || "").slice(0, 8)}  ${String(
-    build.review_status,
-  )}  ${build.created_at || ""}`;
+  return `${build.id}  ${build.environment.padEnd(12)} ${build.branch.padEnd(20)} ${build.commit_sha.slice(0, 8)}  ${build.review_status}  ${build.created_at}`;
 }
 
 function parseLimit(value: unknown, fallback: number): number {
@@ -159,7 +158,7 @@ async function main() {
       );
     } else {
       console.log(
-        `build ${build.id} (${build.branch} @ ${(build.commit_sha || "").slice(0, 8)}) — ${build.review_status}`,
+        `build ${build.id} (${build.environment} / ${build.branch} @ ${(build.commit_sha || "").slice(0, 8)}) — ${build.review_status}`,
       );
       console.log(`  matched:  ${ok.length}`);
       console.log(`  changed:  ${failed.length}`);

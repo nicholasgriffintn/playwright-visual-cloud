@@ -19,10 +19,16 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+
+  if (init.body) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(path, {
     ...init,
     credentials: "same-origin",
-    headers: init.body ? { "Content-Type": "application/json", ...init.headers } : init.headers,
+    headers,
   });
   const value: unknown = await response.json().catch(() => null);
 
@@ -62,8 +68,13 @@ export const api = {
     ),
   project: (projectId: string) =>
     request<{ project: ProjectWithRole }>(`/api/projects/${encodeURIComponent(projectId)}`),
-  builds: (projectId: string) =>
-    request<{ builds: Build[] }>(`/api/projects/${encodeURIComponent(projectId)}/builds`),
+  builds: (projectId: string, environment?: string) => {
+    const query = environment ? `?environment=${encodeURIComponent(environment)}` : "";
+
+    return request<{ builds: Build[]; environments: string[] }>(
+      `/api/projects/${encodeURIComponent(projectId)}/builds${query}`,
+    );
+  },
   createProjectToken: (projectId: string, name: string) =>
     post<{ token: string }>(`/api/projects/${encodeURIComponent(projectId)}/tokens`, { name }),
   members: (workspaceId: string) =>

@@ -3,6 +3,7 @@ const workflow = `- name: Run visual tests
   env:
     PVC_SERVER_URL: \${{ vars.PVC_SERVER_URL }}
     PVC_TOKEN: \${{ secrets.PVC_TOKEN }}
+    PVC_ENVIRONMENT: release
 
 - name: Gate visual changes
   run: pnpm exec pvc status`;

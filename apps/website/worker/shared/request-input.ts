@@ -77,6 +77,7 @@ export async function buildInput(context: AppContext): Promise<CreateBuildInput>
 
   return {
     externalId: requiredString(body.externalId, "externalId", 200),
+    environment: optionalString(body.environment, "environment", 80) ?? "default",
     branch: optionalString(body.branch, "branch", 200) ?? "unknown",
     commitSha: optionalString(body.commitSha, "commitSha", 200) ?? "unknown",
     message: optionalString(body.message, "message", 500) ?? "",
@@ -108,6 +109,10 @@ export async function snapshotInput(context: AppContext): Promise<RecordSnapshot
 
 export function buildLimit(context: AppContext): number {
   return positiveInteger(context.req.query("limit"), "limit", 50, 200);
+}
+
+export function buildEnvironment(context: AppContext): string | undefined {
+  return optionalString(context.req.query("environment"), "environment", 80) ?? undefined;
 }
 
 export function bearerToken(context: AppContext): string {

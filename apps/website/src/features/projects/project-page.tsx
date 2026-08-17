@@ -1,23 +1,22 @@
 import { useEffect, useState } from "react";
+
 import { api } from "../../lib/api";
-import { routeHref } from "../../lib/router";
-import type { Build, Project, ProjectWithRole } from "../../lib/types";
-import { formatDate, shortCommit } from "../../lib/format";
+import type { Project, ProjectWithRole } from "../../lib/types";
+import { ProjectBuilds } from "./project-builds";
 
 export function ProjectPage({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<ProjectWithRole | null>(null);
-  const [builds, setBuilds] = useState<Build[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
 
-    Promise.all([api.project(projectId), api.builds(projectId)])
-      .then(([projectResult, buildResult]) => {
+    api
+      .project(projectId)
+      .then((projectResult) => {
         if (live) {
           setProject(projectResult.project);
-          setBuilds(buildResult.builds);
         }
       })
       .catch((cause: Error) => setError(cause.message));
@@ -59,29 +58,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       </div>
       {token ? <TokenReveal token={token} onClose={() => setToken(null)} /> : null}
       <SetupPanel project={project} />
-      <section className="runs-section">
-        <header>
-          <div>
-            <p className="eyebrow">
-              <span>Runs</span> latest first
-            </p>
-            <h2>Visual builds</h2>
-          </div>
-          <span className="run-count">{builds.length}</span>
-        </header>
-        {builds.length ? (
-          <div className="run-table">
-            {builds.map((build) => (
-              <BuildRow build={build} key={build.id} />
-            ))}
-          </div>
-        ) : (
-          <div className="compact-empty">
-            <strong>Waiting for the first run.</strong>
-            <span>Generate a token, add the matcher, and push a branch.</span>
-          </div>
-        )}
-      </section>
+      <ProjectBuilds projectId={project.id} />
     </section>
   );
 }
@@ -129,9 +106,10 @@ function SetupPanel({ project }: { project: Project }) {
           <li>
             <span>3</span>
             <div>
-              <strong>Add CI secrets</strong>
+              <strong>Add CI configuration</strong>
               <p>
-                <code>PVC_SERVER_URL</code> and <code>PVC_TOKEN</code>
+                <code>PVC_SERVER_URL</code>, <code>PVC_TOKEN</code>, and{" "}
+                <code>PVC_ENVIRONMENT</code>
               </p>
             </div>
           </li>
@@ -151,30 +129,6 @@ function SetupPanel({ project }: { project: Project }) {
         </a>
       </div>
     </section>
-  );
-}
-
-function BuildRow({ build }: { build: Build }) {
-  const label =
-    build.review_status === "none"
-      ? build.status === "running"
-        ? "running"
-        : "clean"
-      : build.review_status;
-
-  return (
-    <a className="run-row" href={routeHref({ kind: "build", buildId: build.id })}>
-      <span className={`run-state ${label}`} />
-      <span>
-        <strong>{build.message || "Untitled visual run"}</strong>
-        <small>
-          {build.branch} · {shortCommit(build.commit_sha)}
-        </small>
-      </span>
-      <span className={`status-chip ${label}`}>{label}</span>
-      <time>{formatDate(build.created_at)}</time>
-      <b>→</b>
-    </a>
   );
 }
 

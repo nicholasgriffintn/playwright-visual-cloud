@@ -4,6 +4,7 @@ import { createVisualRuns } from "../runs/visual-runs";
 import { protectBrowserMutations } from "../shared/browser-security";
 import { requireProSession, type AppContext } from "../shared/http";
 import {
+  buildEnvironment,
   inviteInput,
   inviteTokenInput,
   namedTokenInput,
@@ -11,8 +12,8 @@ import {
   routeParam,
   workspaceInput,
 } from "../shared/request-input";
-import type { Env } from "../types";
 import { canonicalOrigin } from "../shared/security";
+import type { Env } from "../types";
 import { createWorkspaceDirectory } from "./directory";
 
 const workspaceRoutes = new Hono<{ Bindings: Env }>();
@@ -104,13 +105,14 @@ async function getProject(context: AppContext): Promise<Response> {
 
 async function listProjectBuilds(context: AppContext): Promise<Response> {
   const { user } = await requireProSession(context);
-  const builds = await createVisualRuns(context.env.DB).listBuilds(
-    user.id,
-    routeParam(context, "projectId"),
-    100,
-  );
+  const projectId = routeParam(context, "projectId");
+  const visualRuns = createVisualRuns(context.env.DB);
+  const [builds, environments] = await Promise.all([
+    visualRuns.listBuilds(user.id, projectId, 100, buildEnvironment(context)),
+    visualRuns.listEnvironments(user.id, projectId),
+  ]);
 
-  return context.json({ builds });
+  return context.json({ builds, environments });
 }
 
 async function createProjectToken(context: AppContext): Promise<Response> {

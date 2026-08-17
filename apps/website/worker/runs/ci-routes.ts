@@ -1,8 +1,15 @@
 import { Hono } from "hono";
+
 import { createImageVault } from "../images/vault";
 import { DomainError } from "../shared/domain-error";
 import { requireProjectToken, type AppContext } from "../shared/http";
-import { buildInput, buildLimit, routeParam, snapshotInput } from "../shared/request-input";
+import {
+  buildEnvironment,
+  buildInput,
+  buildLimit,
+  routeParam,
+  snapshotInput,
+} from "../shared/request-input";
 import { imageKey, requiredString } from "../shared/validation";
 import type { Env } from "../types";
 import { createVisualRuns } from "./visual-runs";
@@ -27,7 +34,11 @@ async function createBuild(context: AppContext): Promise<Response> {
 
 async function listBuilds(context: AppContext): Promise<Response> {
   const { project } = await requireProjectToken(context);
-  const builds = await runs(context).listProjectBuilds(project.id, buildLimit(context));
+  const builds = await runs(context).listProjectBuilds(
+    project.id,
+    buildLimit(context),
+    buildEnvironment(context),
+  );
 
   return context.json({ builds });
 }
