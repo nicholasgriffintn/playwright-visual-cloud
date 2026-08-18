@@ -1326,6 +1326,75 @@ h2 em {
   display: flex;
   gap: 8px;
 }
+
+.review-action-group {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.review-action-menu {
+  position: relative;
+}
+
+.review-action-menu summary {
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.review-action-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.review-action-menu summary span {
+  font-size: 20px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.review-action-menu[open] summary {
+  background: var(--paper-deep);
+}
+
+.review-action-menu-list {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  position: absolute;
+  right: 0;
+  top: 46px;
+  z-index: 2;
+}
+
+.review-action-menu-list button {
+  background: var(--paper);
+  border: 0;
+  border-top: 1px solid var(--line);
+  display: block;
+  font: 13px var(--sans);
+  min-height: 42px;
+  padding: 0 16px;
+  text-align: left;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.review-action-menu-list button:first-child {
+  border-top: 0;
+}
+
+.review-action-menu-list button:hover {
+  background: var(--paper-deep);
+}
+
+.review-action-menu-list button:disabled {
+  cursor: default;
+}
+
+.review-action-menu-list button:disabled:hover {
+  background: var(--paper);
+}
 .snapshot-viewer {
   min-width: 0;
 }

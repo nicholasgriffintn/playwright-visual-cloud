@@ -21,6 +21,7 @@ export function SnapshotViewer({
 }) {
   const [mode, setMode] = useState<ViewMode>(snapshot.diff_key ? "slider" : "split");
   const [slider, setSlider] = useState(50);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [action, setAction] = useState<SnapshotReviewAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +36,7 @@ export function SnapshotViewer({
   const reviewable = isReviewableSnapshot(snapshot);
 
   async function review(review: SnapshotReviewAction) {
+    setMenuOpen(false);
     setAction(review);
     try {
       if (review === "approve") {
@@ -86,7 +88,7 @@ export function SnapshotViewer({
             />
           </div>
           {reviewable ? (
-            <>
+            <div className="review-action-group">
               <button
                 className="button button-primary"
                 disabled={Boolean(action)}
@@ -99,23 +101,40 @@ export function SnapshotViewer({
                     ? "Accept baseline"
                     : "Approve change"}
               </button>
-              <button
-                className="button"
-                disabled={Boolean(action)}
-                onClick={() => void review("ignore")}
-                type="button"
+              <details
+                className="review-action-menu"
+                open={menuOpen}
+                onToggle={(event) => {
+                  setMenuOpen(event.currentTarget.open);
+                }}
               >
-                {action === "ignore" ? "Ignoring…" : "Ignore change"}
-              </button>
-              <button
-                className="button"
-                disabled={Boolean(action)}
-                onClick={() => void review("archive")}
-                type="button"
-              >
-                {action === "archive" ? "Archiving…" : "Archive change"}
-              </button>
-            </>
+                <summary
+                  aria-label="More review options"
+                  className="button button-small"
+                  role="button"
+                >
+                  <span>⋯</span>
+                </summary>
+                <div className="review-action-menu-list">
+                  <button
+                    className="button button-small"
+                    disabled={Boolean(action)}
+                    onClick={() => void review("ignore")}
+                    type="button"
+                  >
+                    {action === "ignore" ? "Ignoring…" : "Ignore change"}
+                  </button>
+                  <button
+                    className="button button-small"
+                    disabled={Boolean(action)}
+                    onClick={() => void review("archive")}
+                    type="button"
+                  >
+                    {action === "archive" ? "Archiving…" : "Archive change"}
+                  </button>
+                </div>
+              </details>
+            </div>
           ) : (
             <span className={`status-chip ${snapshot.status}`}>{status}</span>
           )}

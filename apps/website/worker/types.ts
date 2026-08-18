@@ -38,6 +38,7 @@ export interface Project {
   default_branch: string;
   repository: string | null;
   created_at: string;
+  is_connected?: boolean;
 }
 
 export interface Build {

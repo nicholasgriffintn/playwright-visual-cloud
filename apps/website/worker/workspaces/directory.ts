@@ -3,6 +3,12 @@ import { hashToken, randomToken } from "../shared/security";
 import type { WorkspaceRole } from "../shared/validation";
 import type { Project, User, Workspace } from "../types";
 
+interface ProjectWithRoleRow
+  extends Omit<Project, "is_connected"> {
+  role: WorkspaceRole;
+  is_connected: 0 | 1;
+}
+
 export interface CreateProjectInput {
   name: string;
   slug: string;
@@ -68,17 +74,28 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
   ): Promise<{ project: Project & { role: WorkspaceRole }; role: WorkspaceRole }> {
     const row = await db
       .prepare(
-        `SELECT p.*, m.role FROM projects p JOIN workspace_members m ON m.workspace_id = p.workspace_id
-       WHERE p.id = ?1 AND m.user_id = ?2`,
+        `SELECT
+           p.*, m.role,
+           EXISTS (
+             SELECT 1 FROM project_tokens t
+             WHERE t.project_id = p.id
+               AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))
+           ) AS is_connected
+         FROM projects p
+         JOIN workspace_members m ON m.workspace_id = p.workspace_id
+         WHERE p.id = ?1 AND m.user_id = ?2`,
       )
       .bind(projectId, userId)
-      .first<Project & { role: WorkspaceRole }>();
+      .first<ProjectWithRoleRow>();
 
     if (!row) {
       throw new DomainError("Project not found", 404);
     }
 
-    return { project: row, role: row.role };
+    return {
+      project: { ...row, is_connected: row.is_connected === 1 },
+      role: row.role,
+    };
   }
 
   return {

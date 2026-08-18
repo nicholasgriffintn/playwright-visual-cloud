@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 
 import { api } from "../../lib/api";
 import type { Project, ProjectWithRole } from "../../lib/types";
@@ -49,7 +49,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         {project.role === "owner" ? (
           <button
             className="button button-primary"
-            onClick={() => void createToken(project.id, setToken, setError)}
+            onClick={() => void createToken(project.id, setToken, setError, setProject)}
             type="button"
           >
             Generate CI token
@@ -57,7 +57,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         ) : null}
       </div>
       {token ? <TokenReveal token={token} onClose={() => setToken(null)} /> : null}
-      <SetupPanel project={project} />
+      {!project.is_connected ? <SetupPanel project={project} /> : null}
       <ProjectBuilds projectId={project.id} />
     </section>
   );
@@ -67,9 +67,13 @@ async function createToken(
   projectId: string,
   setToken: (value: string) => void,
   setError: (value: string) => void,
+  setProject: Dispatch<SetStateAction<ProjectWithRole | null>>,
 ) {
   try {
-    setToken((await api.createProjectToken(projectId, "CI")).token);
+    const token = (await api.createProjectToken(projectId, "CI")).token;
+
+    setToken(token);
+    setProject((current) => (current ? { ...current, is_connected: true } : current));
   } catch (cause) {
     setError((cause as Error).message);
   }

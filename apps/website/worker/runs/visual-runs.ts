@@ -72,6 +72,12 @@ export function createVisualRuns(db: D1Database): VisualRuns {
     return snapshot.status === "failed" || snapshot.status === "new";
   }
 
+  function snapshotUpdateSql(reviewStatus: ReviewStatus): string {
+    return reviewStatus === "approved"
+      ? "UPDATE snapshots SET status = ?1, approved_at = datetime('now') WHERE build_id = ?2 AND status IN ('failed','new')"
+      : "UPDATE snapshots SET status = ?1, approved_at = NULL WHERE build_id = ?2 AND status IN ('failed','new')";
+  }
+
   async function getBuild(buildId: string): Promise<Build | null> {
     return db.prepare("SELECT * FROM builds WHERE id = ?1").bind(buildId).first<Build>();
   }
@@ -152,7 +158,7 @@ export function createVisualRuns(db: D1Database): VisualRuns {
       .prepare(
         `SELECT
           SUM(CASE WHEN status IN ('failed', 'new') THEN 1 ELSE 0 END) AS pending,
-          SUM(CASE WHEN status IN ('approved', 'ignored', 'archived') THEN 1 ELSE 0 END) AS reviewed
+          SUM(CASE WHEN status IN ('approved', 'ignored') THEN 1 ELSE 0 END) AS reviewed
          FROM snapshots
          WHERE build_id = ?1`,
       )
@@ -190,7 +196,9 @@ export function createVisualRuns(db: D1Database): VisualRuns {
 
     await db
       .prepare(
-        "UPDATE snapshots SET status = ?1, approved_at = CASE WHEN ?1 = 'approved' THEN datetime('now') ELSE NULL END WHERE id = ?2",
+        reviewStatus === "approved"
+          ? "UPDATE snapshots SET status = ?1, approved_at = datetime('now') WHERE id = ?2"
+          : "UPDATE snapshots SET status = ?1, approved_at = NULL WHERE id = ?2",
       )
       .bind(reviewStatus, snapshotId)
       .run();
@@ -218,11 +226,8 @@ export function createVisualRuns(db: D1Database): VisualRuns {
     }
 
     await db
-      .prepare(
-        "UPDATE snapshots SET status = ?1, approved_at = CASE WHEN ?1 = 'approved' THEN datetime('now') ELSE NULL END WHERE build_id = ?2 AND status IN ('failed','new')",
-      )
-      .bind(reviewStatus)
-      .bind(build.id)
+      .prepare(snapshotUpdateSql(reviewStatus))
+      .bind(reviewStatus, build.id)
       .run();
 
     await refreshReviewStatus(build.id);
