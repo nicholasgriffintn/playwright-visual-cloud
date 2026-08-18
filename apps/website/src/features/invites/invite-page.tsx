@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { routeHref } from "../../lib/router";
+import { Link, useNavigate } from "react-router-dom";
 
 export function InvitePage({ token }: { token: string }) {
+  const navigate = useNavigate();
   const [state, setState] = useState<"accepting" | "accepted" | "error">("accepting");
   const [message, setMessage] = useState("Joining workspace…");
 
@@ -13,7 +15,7 @@ export function InvitePage({ token }: { token: string }) {
         setState("accepted");
         setMessage("You are in. Opening the workspace…");
         window.setTimeout(() => {
-          window.location.assign(routeHref({ kind: "app", workspaceId: result.workspaceId }));
+          navigate(routeHref({ kind: "app", workspaceId: result.workspaceId }));
         }, 800);
       })
       .catch((cause: Error) => {
@@ -27,9 +29,9 @@ export function InvitePage({ token }: { token: string }) {
       <span>{state === "accepted" ? "✓" : state === "error" ? "!" : "···"}</span>
       <h1>{message}</h1>
       {state === "error" ? (
-        <a className="button button-ink" href={routeHref({ kind: "app" })}>
+        <Link className="button button-ink" to={routeHref({ kind: "app" })}>
           Return to app
-        </a>
+        </Link>
       ) : null}
     </div>
   );

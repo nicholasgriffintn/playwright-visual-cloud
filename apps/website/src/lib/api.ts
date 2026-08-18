@@ -66,6 +66,20 @@ export const api = {
       `/api/workspaces/${encodeURIComponent(workspaceId)}/projects`,
       input,
     ),
+  updateProjectSettings: (
+    projectId: string,
+    settings: {
+      threshold: number | null;
+      maxDiffPixels: number | null;
+      maxDiffPixelRatio: number | null;
+      includeAA: boolean;
+      ignoreSelectors: string[];
+    },
+  ) =>
+    request<{ project: ProjectWithRole }>(
+      `/api/projects/${encodeURIComponent(projectId)}/settings`,
+      { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(settings) },
+    ),
   project: (projectId: string) =>
     request<{ project: ProjectWithRole }>(`/api/projects/${encodeURIComponent(projectId)}`),
   builds: (projectId: string, environment?: string) => {

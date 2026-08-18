@@ -1,4 +1,4 @@
-import type { Reporter, FullResult } from "@playwright/test/reporter";
+import type { Reporter, FullResult, TestCase, TestResult } from "@playwright/test/reporter";
 
 import { VisualCloudClient } from "./client";
 
@@ -8,8 +8,18 @@ import { VisualCloudClient } from "./client";
  *   reporter: [["list"], ["playwright-visual-cloud/reporter"]]
  */
 export default class VisualCloudReporter implements Reporter {
+  private snapshotAttachments = 0;
+  private testsRun = 0;
+
   printsToStdio() {
     return true;
+  }
+
+  onTestEnd(_test: TestCase, result: TestResult) {
+    this.testsRun += 1;
+    this.snapshotAttachments += result.attachments.filter((attachment) =>
+      attachment.name.includes("-actual") || attachment.name.endsWith("(new)")
+    ).length;
   }
 
   async onEnd(_result: FullResult) {
@@ -18,6 +28,15 @@ export default class VisualCloudReporter implements Reporter {
     try {
       client = new VisualCloudClient();
     } catch {
+      return;
+    }
+
+    if (this.testsRun === 0) {
+      console.log("");
+      console.log("  playwright-visual-cloud");
+      console.log("    no tests ran, so no snapshots were recorded");
+      console.log("");
+
       return;
     }
 
@@ -39,6 +58,12 @@ export default class VisualCloudReporter implements Reporter {
       console.log("");
       console.log("  playwright-visual-cloud");
       console.log(`    ${passed} matched, ${failed} changed, ${fresh} new`);
+
+      if (snapshots.length === 0) {
+        console.log(
+          `    ${this.testsRun} tests ran but recorded no snapshots — check PVC_SERVER_URL and PVC_TOKEN are set`,
+        );
+      }
 
       if (failed > 0 || fresh > 0) {
         console.log(`    review: ${url}`);

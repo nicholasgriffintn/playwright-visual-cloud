@@ -25,6 +25,14 @@ export interface VisualCloudConfig {
   failOnDiff: boolean;
   /** Idempotency key for the build. Defaults to CI run id or the commit sha. */
   runId: string;
+  compare: {
+    threshold?: number;
+    maxDiffPixels?: number;
+    maxDiffPixelRatio?: number;
+    includeAA?: boolean;
+  };
+  ignoreSelectors: string[];
+  retryOnDiff: boolean;
 }
 
 export type VisualCloudUserConfig = Partial<VisualCloudConfig>;
@@ -89,6 +97,57 @@ function parseFailOnDiff(
   throw new Error(
     `playwright-visual-cloud: invalid PVC_FAIL_ON_DIFF=${envValue}. Use 0/1, true/false, on/off, or yes/no.`,
   );
+}
+
+function parseNumber(
+  value: string | undefined,
+  label: string,
+  min?: number,
+  max?: number,
+): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`playwright-visual-cloud: ${label} must be a number.`);
+  }
+
+  if ((min !== undefined && parsed < min) || (max !== undefined && parsed > max)) {
+    const range = max === undefined ? `>= ${min}` : `between ${min} and ${max}`;
+
+    throw new Error(`playwright-visual-cloud: ${label} must be ${range}.`);
+  }
+
+  return parsed;
+}
+
+function parseList(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return value.split(",");
+}
+
+function parseBoolean(value: string | undefined, label: string): boolean | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalised = value.trim().toLowerCase();
+
+  if (normalised === "0" || normalised === "false" || normalised === "off" || normalised === "no") {
+    return false;
+  }
+
+  if (normalised === "1" || normalised === "true" || normalised === "on" || normalised === "yes") {
+    return true;
+  }
+
+  throw new Error(`playwright-visual-cloud: invalid ${label}=${value}. Use 0/1 or true/false.`);
 }
 
 function parseString(
@@ -176,6 +235,16 @@ export function resolveConfig(): VisualCloudConfig {
 
   const message =
     parseString(overrides.message, "message") ?? parseString(git.message, "commit message") ?? "";
+  const ignoreSelectors = (overrides.ignoreSelectors ?? parseList(env("PVC_IGNORE_SELECTORS"))).map(
+    (selector) => selector.trim(),
+  ).filter(Boolean);
+  const compare = {
+    threshold: parseNumber(env("PVC_THRESHOLD"), "PVC_THRESHOLD", 0, 1),
+    maxDiffPixels: parseNumber(env("PVC_MAX_DIFF_PIXELS"), "PVC_MAX_DIFF_PIXELS", 0),
+    maxDiffPixelRatio: parseNumber(env("PVC_MAX_DIFF_PIXEL_RATIO"), "PVC_MAX_DIFF_PIXEL_RATIO", 0, 1),
+    includeAA: parseBoolean(env("PVC_INCLUDE_AA"), "PVC_INCLUDE_AA"),
+    ...overrides.compare,
+  };
   const onMissingBaseline =
     parseOnMissing(overrides.onMissingBaseline) ??
     parseOnMissing(env("PVC_ON_MISSING")) ??
@@ -191,6 +260,9 @@ export function resolveConfig(): VisualCloudConfig {
     onMissingBaseline,
     failOnDiff: parseFailOnDiff(overrides.failOnDiff, env("PVC_FAIL_ON_DIFF")),
     runId,
+    compare,
+    ignoreSelectors,
+    retryOnDiff: overrides.retryOnDiff ?? parseBoolean(env("PVC_RETRY_ON_DIFF"), "PVC_RETRY_ON_DIFF") ?? true,
   };
 
   return cached;

@@ -8,6 +8,13 @@ export interface CompareOptions {
   maxDiffPixels?: number;
   /** Ratio (0–1) of differing pixels allowed. */
   maxDiffPixelRatio?: number;
+  includeAA?: boolean;
+  alpha?: number;
+  aaColor?: [number, number, number];
+  diffColor?: [number, number, number];
+  diffColorAlt?: [number, number, number];
+  diffMask?: boolean;
+  checkerboard?: boolean;
 }
 
 export interface CompareResult {
@@ -60,7 +67,13 @@ export function comparePngs(
 
   const diffPixels = pixelmatch(a.data, b.data, diff.data, width, height, {
     threshold: options.threshold ?? 0.2,
-    includeAA: false,
+    includeAA: options.includeAA ?? false,
+    alpha: options.alpha,
+    aaColor: options.aaColor,
+    diffColor: options.diffColor,
+    diffColorAlt: options.diffColorAlt,
+    diffMask: options.diffMask,
+    checkerboard: options.checkerboard,
   });
   const diffRatio = diffPixels / (width * height);
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { routeHref } from "../../lib/router";
 import type { Project, Workspace } from "../../lib/types";
+import { Link } from "react-router-dom";
 
 export function WorkspacePage({ workspace }: { workspace: Workspace }) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -42,11 +43,11 @@ export function WorkspacePage({ workspace }: { workspace: Workspace }) {
         ) : null}
       </div>
       <div className="workspace-actions">
-        <a className="action-tile" href={routeHref({ kind: "team", workspaceId: workspace.id })}>
+        <Link className="action-tile" to={routeHref({ kind: "team", workspaceId: workspace.id })}>
           <span>Team</span>
           <strong>Manage reviewers</strong>
           <i>→</i>
-        </a>
+        </Link>
         <div className="action-tile static">
           <span>Cloud</span>
           <strong>Cloudflare native</strong>
@@ -79,7 +80,7 @@ export function WorkspacePage({ workspace }: { workspace: Workspace }) {
 
 function ProjectCard({ project }: { project: Project }) {
   return (
-    <a className="project-card" href={routeHref({ kind: "project", projectId: project.id })}>
+    <Link className="project-card" to={routeHref({ kind: "project", projectId: project.id })}>
       <div className="project-card-top">
         <span className="project-glyph">{project.name.slice(0, 1).toUpperCase()}</span>
         <span className="status-chip clean">connected</span>
@@ -90,7 +91,7 @@ function ProjectCard({ project }: { project: Project }) {
         <span>default / {project.default_branch}</span>
         <strong>Open project →</strong>
       </footer>
-    </a>
+    </Link>
   );
 }
 

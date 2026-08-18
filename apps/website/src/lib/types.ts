@@ -16,7 +16,15 @@ export interface Workspace {
   created_at: string;
 }
 
-export interface Project {
+export interface ProjectComparisonSettings {
+  compare_threshold: number | null;
+  compare_max_diff_pixels: number | null;
+  compare_max_diff_pixel_ratio: number | null;
+  compare_include_aa: number;
+  ignore_selectors: string | null;
+}
+
+export interface Project extends ProjectComparisonSettings {
   id: string;
   workspace_id: string;
   name: string;
@@ -68,6 +76,7 @@ export interface Snapshot {
   width: number;
   height: number;
   approved_at: string | null;
+  ignored_selectors: string | null;
 }
 
 export interface BuildPayload {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import { routeHref } from "../../lib/router";
 import type { Workspace } from "../../lib/types";
+import { Link } from "react-router-dom";
 
 export function WorkspacePicker({
   workspaces,
@@ -32,11 +33,11 @@ export function WorkspacePicker({
       <h1>Where are we reviewing?</h1>
       <div className="workspace-choice-grid">
         {workspaces.map((workspace) => (
-          <a href={routeHref({ kind: "app", workspaceId: workspace.id })} key={workspace.id}>
+          <Link to={routeHref({ kind: "app", workspaceId: workspace.id })} key={workspace.id}>
             <span>{workspace.name.slice(0, 2).toUpperCase()}</span>
             <strong>{workspace.name}</strong>
             <small>{workspace.role}</small>
-          </a>
+          </Link>
         ))}
         <button onClick={() => setShowForm(true)} type="button">
           <span>+</span>

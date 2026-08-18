@@ -20,7 +20,13 @@ export interface VisualSnapshotOptions extends CompareOptions {
   caret?: "hide" | "initial";
   stylePath?: string | string[];
   variant?: string;
+  stabilise?: boolean;
+  stabiliseTimeout?: number;
+  ignoreSelectors?: string[];
+  retryOnDiff?: boolean;
 }
+
+const IGNORE_ATTRIBUTE = "data-pvc-ignored";
 
 function isPage(subject: Page | Locator): subject is Page {
   return typeof (subject as Page).goto === "function";
@@ -42,10 +48,11 @@ function slug(input: string): string {
 
 const snapshotCounters = new Map<string, number>();
 
-function nextSnapshotName(rawName: string): string {
-  const next = (snapshotCounters.get(rawName) ?? 0) + 1;
+function nextSnapshotName(rawName: string, variant: string): string {
+  const key = `${rawName}\u0000${variant}`;
+  const next = (snapshotCounters.get(key) ?? 0) + 1;
 
-  snapshotCounters.set(rawName, next);
+  snapshotCounters.set(key, next);
 
   return next === 1 ? rawName : `${rawName} (${next})`;
 }
@@ -56,6 +63,84 @@ function stylePaths(stylePath?: string | string[]): string[] {
   }
 
   return Array.isArray(stylePath) ? [...stylePath] : [stylePath];
+}
+
+function mergeCompareOptions(
+  defaults: CompareOptions,
+  options: VisualSnapshotOptions,
+): CompareOptions {
+  const merged: CompareOptions = { ...defaults };
+
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined) {
+      (merged as Record<string, unknown>)[key] = value;
+    }
+  }
+
+  return merged;
+}
+
+async function waitForFonts(page: Page): Promise<void> {
+  await page
+    .evaluate(() => (document.fonts ? document.fonts.ready.then(() => undefined) : undefined))
+    .catch(() => { });
+}
+
+async function settle(
+  page: Page,
+  take: () => Promise<Buffer>,
+  timeoutMs: number,
+): Promise<Buffer> {
+  const deadline = Date.now() + timeoutMs;
+  let previous = await take();
+
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(120);
+
+    const next = await take();
+
+    if (next.equals(previous)) {
+      return next;
+    }
+
+    previous = next;
+  }
+
+  return previous;
+}
+
+async function applyIgnoreSelectors(page: Page, selectors: string[]): Promise<() => Promise<void>> {
+  if (selectors.length === 0) {
+    return async () => { };
+  }
+
+  const handle = await page.addStyleTag({
+    content: `[${IGNORE_ATTRIBUTE}] { background: #ff00ff !important; color: transparent !important; }
+[${IGNORE_ATTRIBUTE}] * { visibility: hidden !important; }`,
+  });
+
+  await page.evaluate(
+    ([list, attribute]) => {
+      for (const selector of list) {
+        for (const element of document.querySelectorAll(selector)) {
+          element.setAttribute(attribute, "");
+        }
+      }
+    },
+    [selectors, IGNORE_ATTRIBUTE] as const,
+  );
+
+  return async () => {
+    await page
+      .evaluate((attribute) => {
+        for (const element of document.querySelectorAll(`[${attribute}]`)) {
+          element.removeAttribute(attribute);
+        }
+      }, IGNORE_ATTRIBUTE)
+      .catch(() => { });
+    await handle.evaluate((el: Element) => el.remove()).catch(() => { });
+    await handle.dispose().catch(() => { });
+  };
 }
 
 async function capture(subject: Page | Locator, options: VisualSnapshotOptions): Promise<Buffer> {
@@ -96,17 +181,24 @@ async function capture(subject: Page | Locator, options: VisualSnapshotOptions):
     type: "png" as const,
   };
 
+  const restoreIgnored = await applyIgnoreSelectors(page, options.ignoreSelectors ?? []);
+  const take = () =>
+    isPage(subject)
+      ? subject.screenshot({ ...common, fullPage: options.fullPage ?? false, clip: options.clip })
+      : subject.screenshot(common);
+
   try {
-    if (isPage(subject)) {
-      return await subject.screenshot({
-        ...common,
-        fullPage: options.fullPage ?? false,
-        clip: options.clip,
-      });
+    const shouldStabilise = options.stabilise ?? isPage(subject);
+
+    if (!shouldStabilise) {
+      return await take();
     }
 
-    return await subject.screenshot(common);
+    await waitForFonts(page);
+
+    return await settle(page, take, options.stabiliseTimeout ?? 1500);
   } finally {
+    await restoreIgnored();
     await cleanup();
   }
 }
@@ -126,11 +218,21 @@ export const toMatchVisualSnapshot = async function (
   const { config } = client;
 
   const baseName = slug(name ?? info.titlePath.slice(1).join(" - "));
-  const snapshotName = nextSnapshotName(baseName);
   const variant = options.variant ?? `${info.project.name || "default"}-${process.platform}`;
+  const snapshotName = nextSnapshotName(baseName, variant);
+
+  const settings = await client.getProjectSettings();
+  const captureOptions: VisualSnapshotOptions = {
+    ...options,
+    ignoreSelectors: [
+      ...settings.ignoreSelectors,
+      ...config.ignoreSelectors,
+      ...(options.ignoreSelectors ?? []),
+    ],
+  };
 
   const build = await getBuild();
-  const actualPng = await capture(subject, options);
+  const actualPng = await capture(subject, captureOptions);
   const { width, height } = pngDimensions(actualPng);
 
   const baseline = await client.resolveBaseline(snapshotName, variant);
@@ -142,6 +244,7 @@ export const toMatchVisualSnapshot = async function (
       name: snapshotName,
       variant,
       status: "new",
+      ignoredSelectors: captureOptions.ignoreSelectors,
       actualKey,
       width,
       height,
@@ -169,15 +272,31 @@ export const toMatchVisualSnapshot = async function (
   }
 
   const expectedPng = await client.downloadImage(baseline.imageKey);
-  const result = comparePngs(expectedPng, actualPng, options);
+  const compareOptions = mergeCompareOptions(
+    mergeCompareOptions(settings.compare, config.compare),
+    options,
+  );
+  let finalPng = actualPng;
+  let result = comparePngs(expectedPng, finalPng, compareOptions);
+
+  if (!result.pass && !result.sizeMismatch && (options.retryOnDiff ?? config.retryOnDiff)) {
+    const retryPng = await capture(subject, captureOptions);
+    const retryResult = comparePngs(expectedPng, retryPng, compareOptions);
+
+    if (retryResult.pass) {
+      finalPng = retryPng;
+      result = retryResult;
+    }
+  }
 
   if (result.pass) {
-    const actualKey = await client.uploadImage(actualPng);
+    const actualKey = await client.uploadImage(finalPng);
 
     await client.recordSnapshot(build.id, {
       name: snapshotName,
       variant,
       status: "passed",
+      ignoredSelectors: captureOptions.ignoreSelectors,
       diffPixels: result.diffPixels,
       diffRatio: result.diffRatio,
       expectedKey: baseline.imageKey,
@@ -190,7 +309,7 @@ export const toMatchVisualSnapshot = async function (
   }
 
   const [actualKey, diffKey] = await Promise.all([
-    client.uploadImage(actualPng),
+    client.uploadImage(finalPng),
     client.uploadImage(result.diffPng),
   ]);
 
@@ -198,6 +317,7 @@ export const toMatchVisualSnapshot = async function (
     name: snapshotName,
     variant,
     status: "failed",
+    ignoredSelectors: captureOptions.ignoreSelectors,
     diffPixels: result.diffPixels,
     diffRatio: result.diffRatio,
     expectedKey: baseline.imageKey,
@@ -208,7 +328,7 @@ export const toMatchVisualSnapshot = async function (
   });
 
   await info.attach(`${snapshotName}-expected`, { body: expectedPng, contentType: "image/png" });
-  await info.attach(`${snapshotName}-actual`, { body: actualPng, contentType: "image/png" });
+  await info.attach(`${snapshotName}-actual`, { body: finalPng, contentType: "image/png" });
   await info.attach(`${snapshotName}-diff`, { body: result.diffPng, contentType: "image/png" });
 
   const reviewUrl = `${config.serverUrl}/builds/${encodeURIComponent(build.id)}`;

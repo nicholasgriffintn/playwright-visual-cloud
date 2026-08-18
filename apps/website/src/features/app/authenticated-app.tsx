@@ -9,6 +9,7 @@ import { BuildReviewPage } from "../runs/build-review-page";
 import { TeamPage } from "../team/team-page";
 import { WorkspacePage } from "../workspaces/workspace-page";
 import { WorkspacePicker } from "../workspaces/workspace-picker";
+import { useNavigate } from "react-router-dom";
 
 type AuthenticatedAppProps = {
   route: Exclude<Route, { kind: "marketing" }>;
@@ -17,6 +18,7 @@ type AuthenticatedAppProps = {
 };
 
 export function AuthenticatedApp({ route, user, onLogout }: AuthenticatedAppProps) {
+  const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function AuthenticatedApp({ route, user, onLogout }: AuthenticatedAppProp
             workspaces={workspaces}
             onCreated={(workspace) => {
               setWorkspaces((current) => [...current, workspace]);
-              window.location.assign(routeHref({ kind: "app", workspaceId: workspace.id }));
+              navigate(routeHref({ kind: "app", workspaceId: workspace.id }));
             }}
           />
         )

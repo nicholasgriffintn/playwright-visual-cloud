@@ -46,6 +46,16 @@ export interface BuildPayload {
   snapshots: SnapshotRecord[];
 }
 
+export interface ProjectSettings {
+  compare: {
+    threshold?: number;
+    maxDiffPixels?: number;
+    maxDiffPixelRatio?: number;
+    includeAA?: boolean;
+  };
+  ignoreSelectors: string[];
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -58,6 +68,8 @@ export class ApiError extends Error {
 export class VisualCloudClient {
   readonly config: VisualCloudConfig;
 
+  private settings: Promise<ProjectSettings> | null = null;
+
   constructor(config?: VisualCloudConfig) {
     this.config = config ?? resolveConfig();
   }
@@ -66,7 +78,36 @@ export class VisualCloudClient {
     return { Authorization: `Bearer ${this.config.token}`, ...extra };
   }
 
+  private static isTransient(error: unknown): boolean {
+    return (
+      error instanceof ApiError &&
+      (error.status === 0 || error.status === 429 || error.status === 502 ||
+        error.status === 503 || error.status === 504)
+    );
+  }
+
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const attempts = 3;
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        return await this.requestOnce<T>(path, init);
+      } catch (error) {
+        lastError = error;
+
+        if (attempt === attempts || !VisualCloudClient.isTransient(error)) {
+          throw error;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** (attempt - 1)));
+      }
+    }
+
+    throw lastError;
+  }
+
+  private async requestOnce<T>(path: string, init: RequestInit = {}): Promise<T> {
     let res: Response;
 
     try {
@@ -153,6 +194,17 @@ export class VisualCloudClient {
     return builds[0] ?? null;
   }
 
+  async getProjectSettings(): Promise<ProjectSettings> {
+    if (!this.settings) {
+      this.settings = this.request<ProjectSettings>("/api/settings").catch(() => ({
+        compare: {},
+        ignoreSelectors: [],
+      }));
+    }
+
+    return this.settings;
+  }
+
   async resolveBaseline(name: string, variant: string): Promise<BaselineInfo | null> {
     const { branch } = this.config;
     const qs = new URLSearchParams();
@@ -215,6 +267,7 @@ export class VisualCloudClient {
       width: number;
       height: number;
       autoBaseline?: boolean;
+      ignoredSelectors?: string[];
     },
   ): Promise<SnapshotRecord> {
     return this.request<SnapshotRecord>(`/api/builds/${buildId}/snapshots`, {

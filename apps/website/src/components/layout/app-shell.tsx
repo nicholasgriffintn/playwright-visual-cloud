@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Logo } from "../brand/logo";
 import { routeHref } from "../../lib/router";
 import type { User, Workspace } from "../../lib/types";
+import { Link } from "react-router-dom";
 
 type AppShellProps = {
   user: User;
@@ -15,24 +16,24 @@ export function AppShell({ user, workspaces, activeWorkspace, onLogout, children
   return (
     <div className="app-layout">
       <aside className="app-sidebar">
-        <a className="sidebar-brand" href="/">
+        <Link className="sidebar-brand" to="/">
           <Logo />
-        </a>
+        </Link>
         <div className="workspace-stack" aria-label="Workspaces">
           {workspaces.map((workspace) => (
-            <a
+            <Link
               className={`workspace-avatar ${workspace.id === activeWorkspace?.id ? "active" : ""}`}
-              href={routeHref({ kind: "app", workspaceId: workspace.id })}
+              to={routeHref({ kind: "app", workspaceId: workspace.id })}
               key={workspace.id}
               title={workspace.name}
             >
               {workspace.name.slice(0, 2).toUpperCase()}
-            </a>
+            </Link>
           ))}
         </div>
-        <a className="sidebar-add" href={routeHref({ kind: "app" })} title="Create workspace">
+        <Link className="sidebar-add" to={routeHref({ kind: "app" })} title="Create workspace">
           +
-        </a>
+        </Link>
       </aside>
       <div className="app-main">
         <header className="app-topbar">

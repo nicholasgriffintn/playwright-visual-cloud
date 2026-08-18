@@ -1,5 +1,6 @@
 import { Logo } from "../../components/brand/logo";
 import type { User } from "../../lib/types";
+import { Link } from "react-router-dom";
 
 type PlanGateProps = {
   user: User;
@@ -10,9 +11,9 @@ export function PlanGate({ user, onLogout }: PlanGateProps) {
   return (
     <main className="plan-gate">
       <header className="plan-gate-header">
-        <a href="/">
+        <Link to="/">
           <Logo />
-        </a>
+        </Link>
         <button className="text-link" type="button" onClick={() => void onLogout()}>
           Sign out
         </button>
@@ -24,9 +25,9 @@ export function PlanGate({ user, onLogout }: PlanGateProps) {
           </p>
           <h1>Pro access required.</h1>
           <p>Your account does not currently have access to Visual Cloud.</p>
-          <a className="button button-primary" href="/">
+          <Link className="button button-primary" to="/">
             Back to site
-          </a>
+          </Link>
         </div>
         <dl className="plan-gate-details">
           <div>

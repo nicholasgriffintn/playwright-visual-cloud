@@ -20,7 +20,7 @@ export function createProjectAccess(db: D1Database): ProjectAccess {
              AND (t.expires_at IS NULL OR t.expires_at > datetime('now'))`,
         )
         .bind(await hashToken(rawToken))
-        .first<Record<string, string | null>>();
+        .first<Record<string, string | number | null>>();
 
       if (!row) {
         throw new DomainError("Invalid project token", 401);
@@ -32,15 +32,20 @@ export function createProjectAccess(db: D1Database): ProjectAccess {
         .run();
 
       return {
-        tokenId: row.token_id!,
+        tokenId: row.token_id as string,
         project: {
-          id: row.id!,
-          workspace_id: row.workspace_id!,
-          name: row.name!,
-          slug: row.slug!,
-          default_branch: row.default_branch!,
-          repository: row.repository,
-          created_at: row.created_at!,
+          id: row.id as string,
+          workspace_id: row.workspace_id as string,
+          name: row.name as string,
+          slug: row.slug as string,
+          default_branch: row.default_branch as string,
+          repository: row.repository as string | null,
+          created_at: row.created_at as string,
+          compare_threshold: row.compare_threshold as number | null,
+          compare_max_diff_pixels: row.compare_max_diff_pixels as number | null,
+          compare_max_diff_pixel_ratio: row.compare_max_diff_pixel_ratio as number | null,
+          compare_include_aa: Number(row.compare_include_aa ?? 0),
+          ignore_selectors: row.ignore_selectors as string | null,
         },
       };
     },

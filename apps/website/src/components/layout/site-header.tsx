@@ -1,6 +1,7 @@
 import { Logo } from "../brand/logo";
 import { routeHref } from "../../lib/router";
 import type { User } from "../../lib/types";
+import { Link } from "react-router-dom";
 
 type SiteHeaderProps = {
   user: User | null;
@@ -11,9 +12,9 @@ type SiteHeaderProps = {
 export function SiteHeader({ user, onLogout, marketing = false }: SiteHeaderProps) {
   return (
     <header className={`site-header ${marketing ? "site-header-marketing" : ""}`}>
-      <a href={routeHref({ kind: "marketing" })}>
+      <Link to={routeHref({ kind: "marketing" })}>
         <Logo />
-      </a>
+      </Link>
       {marketing ? (
         <nav className="marketing-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
@@ -26,9 +27,9 @@ export function SiteHeader({ user, onLogout, marketing = false }: SiteHeaderProp
       <div className="header-actions">
         {user ? (
           <>
-            <a className="button button-small button-ink" href={routeHref({ kind: "app" })}>
+            <Link className="button button-small button-ink" to={routeHref({ kind: "app" })}>
               Open app
-            </a>
+            </Link>
             {!marketing ? (
               <button
                 className="avatar-button"
@@ -45,9 +46,9 @@ export function SiteHeader({ user, onLogout, marketing = false }: SiteHeaderProp
             ) : null}
           </>
         ) : (
-          <a className="button button-small button-ink" href={routeHref({ kind: "app" })}>
+          <Link className="button button-small button-ink" to={routeHref({ kind: "app" })}>
             Sign in
-          </a>
+          </Link>
         )}
       </div>
     </header>

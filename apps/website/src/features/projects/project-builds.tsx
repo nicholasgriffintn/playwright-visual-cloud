@@ -4,6 +4,7 @@ import { formatDate, shortCommit } from "../../lib/format";
 import { routeHref } from "../../lib/router";
 import type { Build } from "../../lib/types";
 import { useProjectBuilds } from "./use-project-builds";
+import { Link } from "react-router-dom";
 
 export function ProjectBuilds({ projectId }: { projectId: string }) {
   const [environment, setEnvironment] = useState("");
@@ -67,7 +68,7 @@ function BuildRow({ build }: { build: Build }) {
       : build.review_status;
 
   return (
-    <a className="run-row" href={routeHref({ kind: "build", buildId: build.id })}>
+    <Link className="run-row" to={routeHref({ kind: "build", buildId: build.id })}>
       <span className={`run-state ${label}`} />
       <span>
         <strong>{build.message || "Untitled visual run"}</strong>
@@ -78,6 +79,6 @@ function BuildRow({ build }: { build: Build }) {
       <span className={`status-chip ${label}`}>{label}</span>
       <time>{formatDate(build.created_at)}</time>
       <b>→</b>
-    </a>
+    </Link>
   );
 }

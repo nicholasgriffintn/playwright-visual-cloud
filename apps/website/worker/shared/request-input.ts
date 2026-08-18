@@ -1,7 +1,11 @@
 import { HTTPException } from "hono/http-exception";
 
 import type { CreateBuildInput, RecordSnapshotInput } from "../runs/visual-runs";
-import type { CreateInviteInput, CreateProjectInput } from "../workspaces/directory";
+import type {
+  CreateInviteInput,
+  CreateProjectInput,
+  ProjectSettingsInput,
+} from "../workspaces/directory";
 import type { AppContext } from "./http";
 import {
   imageKey,
@@ -104,7 +108,51 @@ export async function snapshotInput(context: AppContext): Promise<RecordSnapshot
     width: positiveInteger(body.width, "width", 0, 100_000),
     height: positiveInteger(body.height, "height", 0, 100_000),
     autoBaseline: body.autoBaseline === true,
+    ignoredSelectors: selectorList(body.ignoredSelectors),
   };
+}
+
+function selectorList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const selectors = value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (selectors.some((selector) => selector.length > 240)) {
+    throw new HTTPException(400, { message: "ignoredSelectors entries must be under 240 characters" });
+  }
+
+  return selectors.slice(0, 50);
+}
+
+export async function projectSettingsInput(context: AppContext): Promise<ProjectSettingsInput> {
+  const body = await readObject(context);
+
+  return {
+    threshold: boundedNumber(body.threshold, "threshold", 0, 1),
+    maxDiffPixels: boundedNumber(body.maxDiffPixels, "maxDiffPixels", 0, 100_000_000),
+    maxDiffPixelRatio: boundedNumber(body.maxDiffPixelRatio, "maxDiffPixelRatio", 0, 1),
+    includeAA: body.includeAA === true,
+    ignoreSelectors: selectorList(body.ignoreSelectors),
+  };
+}
+
+function boundedNumber(value: unknown, label: string, min: number, max: number): number | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+    throw new HTTPException(400, { message: `${label} must be a number between ${min} and ${max}` });
+  }
+
+  return parsed;
 }
 
 export function buildLimit(context: AppContext): number {

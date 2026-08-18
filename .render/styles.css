@@ -1261,7 +1261,7 @@ h2 em {
   color: var(--muted);
   font: 10px var(--mono);
 }
-.review-status {
+.review-summary > div {
   align-items: center;
   display: flex;
   gap: 10px;

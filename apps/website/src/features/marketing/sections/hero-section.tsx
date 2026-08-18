@@ -1,5 +1,6 @@
 import type { User } from "../../../lib/types";
 import { routeHref } from "../../../lib/router";
+import { Link } from "react-router-dom";
 
 export function HeroSection({ user }: { user: User | null }) {
   return (
@@ -18,9 +19,9 @@ export function HeroSection({ user }: { user: User | null }) {
           merge, and keep every screenshot inside your own Cloudflare account.
         </p>
         <div className="hero-actions">
-          <a className="button button-primary" href={routeHref({ kind: "app" })}>
+          <Link className="button button-primary" to={routeHref({ kind: "app" })}>
             {user ? "Open your workspace" : "Get started"}
-          </a>
+          </Link>
           <a className="text-link" href="#how-it-works">
             Explore the workflow <span>↓</span>
           </a>

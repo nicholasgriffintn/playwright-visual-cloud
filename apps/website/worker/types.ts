@@ -39,6 +39,11 @@ export interface Project {
   repository: string | null;
   created_at: string;
   is_connected?: boolean;
+  compare_threshold: number | null;
+  compare_max_diff_pixels: number | null;
+  compare_max_diff_pixel_ratio: number | null;
+  compare_include_aa: number;
+  ignore_selectors: string | null;
 }
 
 export interface Build {
@@ -70,6 +75,7 @@ export interface Snapshot {
   height: number;
   created_at: string;
   approved_at: string | null;
+  ignored_selectors: string | null;
 }
 
 export interface SessionPrincipal {

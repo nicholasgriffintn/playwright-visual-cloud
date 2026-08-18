@@ -2,6 +2,7 @@ import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 
 import { api } from "../../lib/api";
 import type { Project, ProjectWithRole } from "../../lib/types";
+import { ComparisonSettings } from "./comparison-settings";
 import { ProjectBuilds } from "./project-builds";
 
 export function ProjectPage({ projectId }: { projectId: string }) {
@@ -59,6 +60,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
       {token ? <TokenReveal token={token} onClose={() => setToken(null)} /> : null}
       {!project.is_connected ? <SetupPanel project={project} /> : null}
       <ProjectBuilds projectId={project.id} />
+      <ComparisonSettings project={project} onSaved={setProject} />
     </section>
   );
 }

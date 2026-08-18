@@ -68,6 +68,7 @@ export function SnapshotViewer({
           </p>
           <h2>{snapshot.name}</h2>
           <p>{diffMetric(snapshot.diff_pixels, snapshot.diff_ratio)}</p>
+          <IgnoredRegions selectors={snapshot.ignored_selectors} />
         </div>
         <div className="viewer-actions">
           <div className="view-modes" aria-label="Comparison mode">
@@ -238,5 +239,29 @@ function Comparison({
         </div>
       </figure>
     </div>
+  );
+}
+
+function IgnoredRegions({ selectors }: { selectors: string | null }) {
+  if (!selectors) {
+    return null;
+  }
+
+  let parsed: string[];
+
+  try {
+    parsed = JSON.parse(selectors) as string[];
+  } catch {
+    return null;
+  }
+
+  if (parsed.length === 0) {
+    return null;
+  }
+
+  return (
+    <p className="ignored-regions" title={parsed.join(", ")}>
+      {parsed.length} region{parsed.length === 1 ? "" : "s"} excluded from comparison
+    </p>
   );
 }

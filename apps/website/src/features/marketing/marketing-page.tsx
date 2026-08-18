@@ -6,6 +6,7 @@ import { FeatureSection } from "./sections/feature-section";
 import { HeroSection } from "./sections/hero-section";
 import { ProcessSection } from "./sections/process-section";
 import { WorkflowSection } from "./sections/workflow-section";
+import { Link } from "react-router-dom";
 
 export function MarketingPage({
   user,
@@ -50,9 +51,9 @@ export function MarketingPage({
             <br />
             <span>Own the decision.</span>
           </h2>
-          <a className="button button-primary" href={routeHref({ kind: "app" })}>
+          <Link className="button button-primary" to={routeHref({ kind: "app" })}>
             {user ? "Go to dashboard" : "Get started"}
-          </a>
+          </Link>
         </section>
       </main>
       <footer className="marketing-footer">

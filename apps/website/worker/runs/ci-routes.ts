@@ -22,8 +22,37 @@ ciRoutes.get("/builds/:buildId", getBuild);
 ciRoutes.post("/builds/:buildId/finish", finishBuild);
 ciRoutes.post("/builds/:buildId/snapshots", recordSnapshot);
 ciRoutes.get("/baselines/resolve", getBaseline);
+ciRoutes.get("/settings", getSettings);
 ciRoutes.put("/images/:key", putImage);
 ciRoutes.get("/images/:key", getImage);
+
+async function getSettings(context: AppContext): Promise<Response> {
+  const { project } = await requireProjectToken(context);
+  let ignoreSelectors: string[] = [];
+
+  if (project.ignore_selectors) {
+    try {
+      const parsed: unknown = JSON.parse(project.ignore_selectors);
+
+      ignoreSelectors = Array.isArray(parsed)
+        ? parsed.filter((entry): entry is string => typeof entry === "string")
+        : [];
+    } catch {
+      ignoreSelectors = [];
+    }
+  }
+
+  return context.json({
+    defaultBranch: project.default_branch,
+    compare: {
+      threshold: project.compare_threshold ?? undefined,
+      maxDiffPixels: project.compare_max_diff_pixels ?? undefined,
+      maxDiffPixelRatio: project.compare_max_diff_pixel_ratio ?? undefined,
+      includeAA: project.compare_include_aa === 1 ? true : undefined,
+    },
+    ignoreSelectors,
+  });
+}
 
 async function createBuild(context: AppContext): Promise<Response> {
   const { project } = await requireProjectToken(context);

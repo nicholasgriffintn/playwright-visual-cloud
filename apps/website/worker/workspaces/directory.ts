@@ -30,12 +30,25 @@ export interface WorkspaceMember {
   created_at: string;
 }
 
+export interface ProjectSettingsInput {
+  threshold: number | null;
+  maxDiffPixels: number | null;
+  maxDiffPixelRatio: number | null;
+  includeAA: boolean;
+  ignoreSelectors: string[];
+}
+
 export interface WorkspaceDirectory {
   listWorkspaces(userId: string): Promise<Workspace[]>;
   createWorkspace(userId: string, name: string, slug: string): Promise<Workspace>;
   listProjects(userId: string, workspaceId: string): Promise<Project[]>;
   createProject(userId: string, workspaceId: string, input: CreateProjectInput): Promise<Project>;
   getProject(userId: string, projectId: string): Promise<Project & { role: WorkspaceRole }>;
+  updateProjectSettings(
+    userId: string,
+    projectId: string,
+    input: ProjectSettingsInput,
+  ): Promise<Project & { role: WorkspaceRole }>;
   listMembers(userId: string, workspaceId: string): Promise<WorkspaceMember[]>;
   createInvite(userId: string, workspaceId: string, input: CreateInviteInput): Promise<string>;
   acceptInvite(user: User, rawToken: string): Promise<string>;
@@ -179,6 +192,29 @@ export function createWorkspaceDirectory(db: D1Database): WorkspaceDirectory {
     },
 
     async getProject(userId, projectId) {
+      return (await projectWithRole(projectId, userId)).project;
+    },
+
+    async updateProjectSettings(userId, projectId, input) {
+      const { project } = await projectWithRole(projectId, userId);
+
+      await requireOwner(project.workspace_id, userId);
+      await db
+        .prepare(
+          `UPDATE projects SET compare_threshold = ?2, compare_max_diff_pixels = ?3,
+             compare_max_diff_pixel_ratio = ?4, compare_include_aa = ?5, ignore_selectors = ?6
+           WHERE id = ?1`,
+        )
+        .bind(
+          projectId,
+          input.threshold,
+          input.maxDiffPixels,
+          input.maxDiffPixelRatio,
+          input.includeAA ? 1 : 0,
+          input.ignoreSelectors.length ? JSON.stringify(input.ignoreSelectors) : null,
+        )
+        .run();
+
       return (await projectWithRole(projectId, userId)).project;
     },
 

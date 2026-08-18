@@ -21,6 +21,7 @@ export interface RecordSnapshotInput {
   width: number;
   height: number;
   autoBaseline: boolean;
+  ignoredSelectors: string[];
 }
 
 export interface BaselineQuery {
@@ -65,7 +66,7 @@ type ReviewStatus = "approved" | "ignored" | "archived";
 
 export function createVisualRuns(db: D1Database): VisualRuns {
   const snapshotSelect = `
-    SELECT id, build_id, name, variant, status, diff_pixels, diff_ratio, expected_key, actual_key, diff_key, width, height, approved_at
+    SELECT id, build_id, name, variant, status, diff_pixels, diff_ratio, expected_key, actual_key, diff_key, width, height, approved_at, ignored_selectors
     FROM snapshots`;
 
   function isPendingSnapshot(snapshot: Snapshot): boolean {
@@ -318,11 +319,12 @@ export function createVisualRuns(db: D1Database): VisualRuns {
       const autoApproved = input.status === "new" && input.autoBaseline;
       await db
         .prepare(
-          `INSERT INTO snapshots (id, build_id, name, variant, status, diff_pixels, diff_ratio, expected_key, actual_key, diff_key, width, height, approved_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+          `INSERT INTO snapshots (id, build_id, name, variant, status, diff_pixels, diff_ratio, expected_key, actual_key, diff_key, width, height, approved_at, ignored_selectors)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
          ON CONFLICT (build_id, name, variant) DO UPDATE SET status = excluded.status, diff_pixels = excluded.diff_pixels,
            diff_ratio = excluded.diff_ratio, expected_key = excluded.expected_key, actual_key = excluded.actual_key,
-           diff_key = excluded.diff_key, width = excluded.width, height = excluded.height, approved_at = excluded.approved_at
+           diff_key = excluded.diff_key, width = excluded.width, height = excluded.height, approved_at = excluded.approved_at,
+           ignored_selectors = excluded.ignored_selectors
          `,
         )
         .bind(
@@ -339,6 +341,7 @@ export function createVisualRuns(db: D1Database): VisualRuns {
           input.width,
           input.height,
           autoApproved ? new Date().toISOString() : null,
+          input.ignoredSelectors.length ? JSON.stringify(input.ignoredSelectors) : null,
         )
         .run();
 

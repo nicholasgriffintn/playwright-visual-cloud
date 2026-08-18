@@ -1,16 +1,9 @@
-import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+
 import { parseRoute } from "../lib/router";
 
 export function useRoute() {
-  const [route, setRoute] = useState(() => parseRoute(window.location.pathname));
+  const { pathname } = useLocation();
 
-  useEffect(() => {
-    const update = () => setRoute(parseRoute(window.location.pathname));
-
-    window.addEventListener("popstate", update);
-
-    return () => window.removeEventListener("popstate", update);
-  }, []);
-
-  return route;
+  return parseRoute(pathname);
 }

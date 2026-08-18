@@ -7,6 +7,7 @@ import { routeHref } from "../../lib/router";
 import type { BuildPayload } from "../../lib/types";
 import { SnapshotViewer } from "./snapshot-viewer";
 import { isPendingSnapshot } from "./snapshot-status";
+import { Link } from "react-router-dom";
 
 export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snapshotId?: string }) {
   const [payload, setPayload] = useState<BuildPayload | null>(null);
@@ -70,7 +71,7 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
           <p>
             {payload.build.environment} · {payload.build.branch}
           </p>
-          <div>
+          <div className="review-status">
             <span className={`status-chip ${payload.build.review_status}`}>
               {payload.build.review_status === "none" ? "clean" : payload.build.review_status}
             </span>
@@ -107,18 +108,18 @@ export function BuildReviewPage({ buildId, snapshotId }: { buildId: string; snap
         </div>
         <nav className="snapshot-list" aria-label="Snapshots">
           {payload.snapshots.map((snapshot) => (
-            <a
+            <Link
               aria-label={`${snapshot.name}, ${snapshot.variant}`}
               className={snapshot.id === selected?.id ? "active" : ""}
-              href={routeHref({ kind: "build", buildId, snapshotId: snapshot.id })}
               key={snapshot.id}
+              to={routeHref({ kind: "build", buildId, snapshotId: snapshot.id })}
             >
               <span>
                 <strong>{snapshot.name}</strong>
                 <small>{snapshot.variant}</small>
               </span>
               <i className={`snapshot-dot ${snapshot.status}`} />
-            </a>
+            </Link>
           ))}
         </nav>
       </aside>

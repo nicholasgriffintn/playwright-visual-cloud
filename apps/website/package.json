@@ -10,7 +10,7 @@
     "deploy": "pnpm check && wrangler deploy",
     "migrate": "wrangler d1 migrations apply pvc --remote",
     "migrate:local": "wrangler d1 migrations apply pvc --local",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.worker.json --noEmit",
     "check": "pnpm typecheck && pnpm build && wrangler deploy --dry-run"
   },
   "dependencies": {
@@ -25,7 +25,8 @@
     "@ngriffin_uk/auth-request": "^0.2.4",
     "hono": "^4.13.2",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.52.1",

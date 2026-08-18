@@ -9,6 +9,7 @@ import {
   inviteTokenInput,
   namedTokenInput,
   projectInput,
+  projectSettingsInput,
   routeParam,
   workspaceInput,
 } from "../shared/request-input";
@@ -32,6 +33,7 @@ projectRoutes.use("*", protectBrowserMutations);
 projectRoutes.get("/:projectId", getProject);
 projectRoutes.get("/:projectId/builds", listProjectBuilds);
 projectRoutes.post("/:projectId/tokens", createProjectToken);
+projectRoutes.patch("/:projectId/settings", updateProjectSettings);
 
 async function listWorkspaces(context: AppContext): Promise<Response> {
   const { user } = await requireProSession(context);
@@ -93,6 +95,17 @@ async function acceptInvite(context: AppContext): Promise<Response> {
   const workspaceId = await directory(context).acceptInvite(user, await inviteTokenInput(context));
 
   return context.json({ workspaceId });
+}
+
+async function updateProjectSettings(context: AppContext): Promise<Response> {
+  const { user } = await requireProSession(context);
+  const project = await directory(context).updateProjectSettings(
+    user.id,
+    routeParam(context, "projectId"),
+    await projectSettingsInput(context),
+  );
+
+  return context.json({ project });
 }
 
 async function getProject(context: AppContext): Promise<Response> {
